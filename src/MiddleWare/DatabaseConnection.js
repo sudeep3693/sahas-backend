@@ -14,5 +14,3 @@ const DBConnect = (req, res, next) =>{
 //process.env.MONGO_URI
 export default DBConnect;
 
-
-const uri = "mongodb+srv://sudeepsubedi72:<db_password>@sahascooperative.eyybn0u.mongodb.net/?retryWrites=true&w=majority&appName=SahasCooperative";
