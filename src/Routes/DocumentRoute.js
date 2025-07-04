@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import Document from '../Model/DocumentModel.js';
-import { createCloudinaryStorage } from '../utils/cloudinaryStorageFactory.js';
+import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
 import cloudinary from '../utils/cloudinary.js';
 import path from 'path';
 
