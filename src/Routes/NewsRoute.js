@@ -1,17 +1,13 @@
 import { Router } from 'express';
 import multer from 'multer';
-import fs from 'fs';
-import path from 'path';
+import { createCloudinaryStorage } from '../utils/cloudinaryStorageFactory.js';  // 🔑 Factory for different folders
 import NewsModel from '../Model/NewsModel.js';
+import cloudinary from '../utils/cloudinary.js';  // For optional deletion
 
 const router = Router();
 
-// Multer setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/news'),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
-});
-const upload = multer({ storage });
+// Multer + Cloudinary Storage
+const upload = multer({ storage: createCloudinaryStorage('sahas_news') });
 
 /**
  * @desc Save new news detail with image
@@ -19,13 +15,15 @@ const upload = multer({ storage });
  */
 router.post('/save', upload.single('image'), async (req, res) => {
   try {
+    const { date, heading, detail } = req.body;
+
     if (!req.file) return res.status(400).json({ message: 'Image is required' });
 
     const newsModel = new NewsModel({
-      imageName: req.file.filename,
-      date: req.body.date,
-      heading: req.body.heading,
-      newsDescription: req.body.detail,
+      imageName: req.file.path,  // Full Cloudinary URL
+      date,
+      heading,
+      newsDescription: detail,
     });
 
     await newsModel.save();
@@ -37,8 +35,8 @@ router.post('/save', upload.single('image'), async (req, res) => {
         heading: newsModel.heading,
         date: newsModel.date,
         description: newsModel.newsDescription,
-        imageName: newsModel.imageName
-      }
+        imageName: newsModel.imageName,  // Full URL
+      },
     });
   } catch (error) {
     console.error('Error saving news detail:', error);
@@ -59,7 +57,7 @@ router.get('/all', async (req, res) => {
       heading: news.heading,
       date: news.date,
       description: news.newsDescription,
-      imageName: news.imageName
+      imageName: news.imageName,  // Already a full Cloudinary URL
     }));
 
     res.status(200).json(formattedNews);
@@ -69,7 +67,7 @@ router.get('/all', async (req, res) => {
 });
 
 /**
- * @desc Delete news detail by ID and remove image
+ * @desc Delete news detail by ID and remove image from Cloudinary
  * @route DELETE /news/delete/:id
  */
 router.delete('/delete/:id', async (req, res) => {
@@ -78,10 +76,9 @@ router.delete('/delete/:id', async (req, res) => {
 
     if (!news) return res.status(404).json({ message: 'News not found' });
 
-    const filePath = path.join(path.resolve(), 'uploads/news', news.imageName);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    // Optional: Remove image from Cloudinary (only if needed)
+    const publicId = news.imageName.split('/').pop().split('.')[0];  // crude way to extract public_id
+    await cloudinary.uploader.destroy(`sahas_news/${publicId}`);
 
     res.status(200).json({ message: 'Deleted successfully' });
   } catch (error) {

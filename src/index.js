@@ -19,16 +19,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(CorsMiddleware);
 
-// Static file routes
-
-app.use('/uploads/carousel', express.static('uploads/carousel'));
-app.use('/uploads/gallery', express.static('uploads/gallery'));
-app.use('/uploads/notice', express.static('uploads/notice'));
-app.use('/uploads/team', express.static('uploads/teamDetails'));
-app.use('/uploads/news', express.static('uploads/news'));
-app.use('/uploads/documents', express.static('uploads/documents'));
-app.use('/uploads/messages', express.static('uploads/messages'));
-
+// Removed static file serving since now files are on Cloudinary
 
 // API Routes
 app.use('/admin', LoginRoute);
@@ -38,8 +29,8 @@ app.use('/notice', NoticeRoute);
 app.use('/gallery', GalleryRoute);
 app.use('/api', BasicDetails);
 app.use('/teamDetail', TeamDetailRoute);
-app.use('/news', NewsRoute)
-app.use('/documents', DocumentRoute)
+app.use('/news', NewsRoute);
+app.use('/documents', DocumentRoute);
 app.use('/messages', MessageRoute);
 
 // Start server

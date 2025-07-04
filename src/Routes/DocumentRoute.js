@@ -1,34 +1,35 @@
 import { Router } from 'express';
 import multer from 'multer';
-import fs from 'fs';
-import path from 'path';
 import Document from '../Model/DocumentModel.js';
+import { createCloudinaryStorage } from '../utils/cloudinaryStorageFactory.js';
+import cloudinary from '../utils/cloudinary.js';
+import path from 'path';
 
 const router = Router();
 
-// Storage config for PDFs
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/documents'),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
-});
-const upload = multer({ storage });
+// Multer + Cloudinary Storage for PDFs
+// Make sure to allow 'pdf' in allowed_formats in your cloudinaryStorageFactory.js
+const upload = multer({ storage: createCloudinaryStorage('sahas_documents') });
 
 /**
- * @desc Upload new document
+ * @desc Upload new document (PDF)
  * @route POST /documents/save
  */
 router.post('/save', upload.single('file'), async (req, res) => {
   try {
     const { heading, category } = req.body;
+
     if (!req.file) return res.status(400).json({ message: 'PDF file is required' });
 
     const document = new Document({
       heading,
       category,
-      filePath: req.file.filename
+      filePath: req.file.path,    // Cloudinary URL to PDF
+      publicId: req.file.filename || req.file.public_id, // store public ID for deletion (depends on multer-storage-cloudinary version)
     });
 
     await document.save();
+
     res.status(201).json({ message: 'Document saved successfully', document });
   } catch (error) {
     console.error('Error saving document:', error);
@@ -50,19 +51,20 @@ router.get('/all', async (req, res) => {
 });
 
 /**
- * @desc Delete document and its file
+ * @desc Delete document and its file from Cloudinary
  * @route DELETE /documents/delete/:id
  */
 router.delete('/delete/:id', async (req, res) => {
   try {
-    const { filePath } = req.body;
-    const absolutePath = path.join(path.resolve(), 'uploads/documents', filePath);
+    const doc = await Document.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: 'Document not found' });
+
+    // Delete file from Cloudinary using publicId
+    if (doc.publicId) {
+      await cloudinary.uploader.destroy(doc.publicId);
+    }
 
     await Document.findByIdAndDelete(req.params.id);
-
-    if (fs.existsSync(absolutePath)) {
-      fs.unlinkSync(absolutePath);
-    }
 
     res.status(200).json({ message: 'Document deleted successfully' });
   } catch (error) {
@@ -83,7 +85,5 @@ router.get('/category/:category', async (req, res) => {
     res.status(500).json({ message: 'Error fetching documents by category', error });
   }
 });
-
-
 
 export default router;

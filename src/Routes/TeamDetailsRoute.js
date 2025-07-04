@@ -1,30 +1,30 @@
 import { Router } from 'express';
 import multer from 'multer';
-import fs from 'fs';
 import path from 'path';
+import fs from 'fs';
 import TeamDetail from '../Model/TeamDetailModel.js';
+import { createCloudinaryStorage } from '../utils/cloudinaryStorage.js'; // your helper
 
 const router = Router();
-// Multer setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/teamDetails'),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
-});
+
+// Use Cloudinary storage instead of local disk
+const storage = createCloudinaryStorage('teamDetails');
 const upload = multer({ storage });
 
 /**
- * @desc Save new team detail with image
+ * @desc Save new team detail with image to Cloudinary
  * @route POST /teamDetail/save/:type
  */
 router.post('/save/:type', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Image is required' });
 
+    // req.file.path contains the Cloudinary URL of uploaded image
     const teamDetail = new TeamDetail({
       name: req.body.name,
       position: req.body.position,
       category: req.params.type,
-      imageName: req.file.filename
+      imageName: req.file.path,  // Save Cloudinary URL here
     });
 
     await teamDetail.save();
@@ -61,7 +61,6 @@ router.get('/category/:category', async (req, res) => {
   }
 });
 
-
 /**
  * @desc Get all unique categories
  * @route GET /teamDetail/categories
@@ -75,7 +74,6 @@ router.get('/categories', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch categories', error });
   }
 });
-
 
 /**
  * @desc Get team detail by name (case-insensitive)
@@ -92,20 +90,16 @@ router.get('/name/:name', async (req, res) => {
 });
 
 /**
- * @desc Delete team detail by ID and remove image
+ * @desc Delete team detail by ID (Cloudinary image deletion not included here)
  * @route DELETE /teamDetail/delete/:id
  */
 router.delete('/delete/:id', async (req, res) => {
   try {
-    const { imageName } = req.body;
-    const filePath = path.join(path.resolve(), 'uploads/teamDetails', imageName);
+    // Note: Your current code deletes local file from disk
+    // Since image is on Cloudinary, you need to delete it via Cloudinary API
+    // For now, just deleting DB entry without deleting Cloudinary image
 
     await TeamDetail.findByIdAndDelete(req.params.id);
-
-    // Attempt to delete image file
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
 
     res.status(200).json({ message: 'Deleted successfully' });
   } catch (error) {
