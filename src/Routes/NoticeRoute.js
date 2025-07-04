@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import cloudinary from '../utils/cloudinary.js';
-import { createCloudinaryStorage } from '../utils/cloudinaryStorageFactory.js';
+import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
 
 const router = Router();
 

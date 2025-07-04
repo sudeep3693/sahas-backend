@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { createCloudinaryStorage } from '../utils/cloudinaryStorageFactory.js';  // 🔑 Factory for different folders
+import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';  // 🔑 Factory for different folders
 import NewsModel from '../Model/NewsModel.js';
 import cloudinary from '../utils/cloudinary.js';  // For optional deletion
 
