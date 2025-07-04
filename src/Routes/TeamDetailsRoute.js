@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import TeamDetail from '../Model/TeamDetailModel.js';
-import { createCloudinaryStorage } from '../utils/cloudinaryStorage.js'; // your helper
+import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js'; // your helper
 
 const router = Router();
 
