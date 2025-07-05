@@ -5,19 +5,15 @@ import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
 import cloudinary from '../utils/cloudinary.js';
 
 const router = Router();
-
-// Multer + Cloudinary storage for message images
 const upload = multer({ storage: createCloudinaryStorage('sahas_messages') });
 
 /**
- * @desc Save message (only one per category allowed)
- * @route POST /message/save
+ * Save new message (only one per position)
  */
 router.post('/save', upload.single('image'), async (req, res) => {
   try {
     const { name, contact, email, message, position } = req.body;
 
-    // Only one message per position (chairperson/general_manager)
     const existing = await Message.findOne({ position });
     if (existing) {
       return res.status(400).json({ message: `${position} record already exists.` });
@@ -29,8 +25,8 @@ router.post('/save', upload.single('image'), async (req, res) => {
       email,
       message,
       position,
-      imageName: req.file.path,         // cloudinary image URL
-      publicId: req.file.filename || req.file.public_id,  // cloudinary public ID for deletion
+      imageName: req.file.path,            // Cloudinary secure URL
+      publicId: req.file.filename || req.file.public_id, // Cloudinary public ID
     });
 
     await newMessage.save();
@@ -42,8 +38,7 @@ router.post('/save', upload.single('image'), async (req, res) => {
 });
 
 /**
- * @desc Get all messages
- * @route GET /message/all
+ * Get all messages
  */
 router.get('/all', async (req, res) => {
   try {
@@ -55,15 +50,13 @@ router.get('/all', async (req, res) => {
 });
 
 /**
- * @desc Delete message by ID (also deletes image from Cloudinary)
- * @route DELETE /message/delete/:id
+ * Delete message by ID (also delete Cloudinary image)
  */
 router.delete('/delete/:id', async (req, res) => {
   try {
     const message = await Message.findById(req.params.id);
     if (!message) return res.status(404).json({ message: 'Message not found' });
 
-    // Delete image from Cloudinary using stored publicId
     if (message.publicId) {
       await cloudinary.uploader.destroy(message.publicId);
     }
