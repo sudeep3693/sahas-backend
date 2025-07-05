@@ -1,73 +1,83 @@
 import { Router } from 'express';
 import multer from 'multer';
-import cloudinary from '../utils/cloudinary.js';
 import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
+import cloudinary from '../utils/cloudinary.js';
 
 const router = Router();
-
-// Multer + Cloudinary storage configured for 'sahas_notice' folder
 const upload = multer({ storage: createCloudinaryStorage('sahas_notice') });
 
-// POST / - Upload multiple notice images
+/**
+ * @route POST /notice
+ * @desc Upload multiple notice images
+ */
 router.post('/', upload.array('images'), (req, res) => {
   try {
     const files = req.files;
-    const descriptions = Array.isArray(req.body.descriptions)
-      ? req.body.descriptions
-      : [req.body.descriptions];
 
     if (!files || files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
-    // Return array of uploaded image URLs and public IDs
-    const uploadedImages = files.map(f => ({
-      url: f.path,
-      publicId: f.filename || f.public_id,
+    const uploadedImages = files.map(file => ({
+      url: file.path,
+      public_id: file.filename.includes('sahas_notice')
+        ? file.filename
+        : `sahas_notice/${file.filename}`,
     }));
 
-    console.log('Descriptions:', descriptions);
-    console.log('Uploaded images:', uploadedImages);
+    console.log('Uploaded Notice Images:', uploadedImages);
 
-    // TODO: Save images & descriptions info to DB if needed
-
-    return res.status(200).json({ message: 'Images uploaded successfully', uploadedImages });
+    res.status(200).json({
+      message: 'Notice images uploaded successfully',
+      images: uploadedImages,
+    });
   } catch (err) {
-    console.error('Upload error:', err);
-    res.status(500).json({ message: 'Upload failed on server' });
+    console.error('Notice Upload Error:', err);
+    res.status(500).json({ message: 'Notice upload failed on server' });
   }
 });
 
-// GET / - Return list of notice images (fetch from DB ideally)
+/**
+ * @route GET /notice
+ * @desc Get all notice images from Cloudinary
+ */
 router.get('/', async (req, res) => {
   try {
-    // TODO: Fetch notice images from your database
-    const noticeImages = [];
-    console.log('Successfully fetched notice images');
-    res.status(200).json(noticeImages);
+    const result = await cloudinary.search
+      .expression('folder:sahas_notice')
+      .sort_by('created_at', 'desc')
+      .max_results(100)
+      .execute();
+
+    const images = result.resources.map(item => ({
+      url: item.secure_url,
+      public_id: item.public_id,
+    }));
+
+    res.status(200).json(images);
   } catch (err) {
-    console.error('Failed to fetch notice images:', err);
-    res.status(500).json({ error: 'Failed to fetch notice images' });
+    console.error('Notice Fetch Error:', err);
+    res.status(500).json({ message: 'Failed to fetch notice images' });
   }
 });
 
-// DELETE /:publicId - Delete notice image by Cloudinary public ID
+/**
+ * @route DELETE /notice/:publicId
+ * @desc Delete notice image by public_id
+ */
 router.delete('/:publicId', async (req, res) => {
   try {
-    const publicId = req.params.publicId; // e.g. "sahas_notice/1234567890-filename"
-
+    const publicId = decodeURIComponent(req.params.publicId);
     const result = await cloudinary.uploader.destroy(publicId);
 
     if (result.result !== 'ok') {
       return res.status(404).json({ message: 'Image not found or already deleted' });
     }
 
-    // TODO: Remove image record from DB if you store it
-
-    return res.status(200).json({ message: 'Image deleted successfully' });
+    res.status(200).json({ message: 'Notice image deleted successfully' });
   } catch (error) {
-    console.error('Failed to delete image:', error);
-    res.status(500).json({ message: 'Failed to delete image' });
+    console.error('Notice Delete Error:', error);
+    res.status(500).json({ message: 'Failed to delete notice image' });
   }
 });
 

@@ -1,74 +1,83 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js'; // your helper
+import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
 import cloudinary from '../utils/cloudinary.js';
 
 const router = Router();
-
-// Multer + Cloudinary Storage for gallery images
 const upload = multer({ storage: createCloudinaryStorage('sahas_gallery') });
 
-// POST / - Upload multiple gallery images
+/**
+ * @route POST /gallery
+ * @desc Upload multiple gallery images
+ */
 router.post('/', upload.array('images'), (req, res) => {
   try {
     const files = req.files;
-    const descriptions = Array.isArray(req.body.descriptions)
-      ? req.body.descriptions
-      : [req.body.descriptions];
 
     if (!files || files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
-    // URLs & public IDs of uploaded images
-    const uploadedImages = files.map(f => ({
-      url: f.path,
-      publicId: f.filename || f.public_id,
+    const uploadedImages = files.map(file => ({
+      url: file.path,  // Cloudinary URL
+      public_id: file.filename.includes('sahas_gallery')
+        ? file.filename
+        : `sahas_gallery/${file.filename}`,
     }));
 
-    console.log('Descriptions:', descriptions);
-    console.log('Uploaded images:', uploadedImages);
+    console.log('Uploaded Gallery Images:', uploadedImages);
 
-    // TODO: Save uploadedImages info & descriptions to DB for retrieval later
-
-    return res.status(200).json({ message: 'Images uploaded successfully', uploadedImages });
+    res.status(200).json({
+      message: 'Gallery images uploaded successfully',
+      images: uploadedImages,
+    });
   } catch (err) {
-    console.error('Upload error:', err);
-    res.status(500).json({ message: 'Upload failed on server' });
+    console.error('Gallery Upload Error:', err);
+    res.status(500).json({ message: 'Gallery upload failed on server' });
   }
 });
 
-// GET / - List all gallery images
+/**
+ * @route GET /gallery
+ * @desc Get all gallery images from Cloudinary
+ */
 router.get('/', async (req, res) => {
   try {
-    // TODO: Fetch gallery image URLs and metadata from your DB
-    // For now, return empty array or static example
-    const galleryImages = [];
-    console.log('Successfully fetched gallery images');
-    res.status(200).json(galleryImages);
+    const result = await cloudinary.search
+      .expression('folder:sahas_gallery')
+      .sort_by('created_at', 'desc')
+      .max_results(100)
+      .execute();
+
+    const images = result.resources.map(item => ({
+      url: item.secure_url,
+      public_id: item.public_id,
+    }));
+
+    res.status(200).json(images);
   } catch (err) {
-    console.error('Failed to fetch gallery images:', err);
-    res.status(500).json({ error: 'Failed to fetch gallery images' });
+    console.error('Gallery Fetch Error:', err);
+    res.status(500).json({ message: 'Failed to fetch gallery images' });
   }
 });
 
-// DELETE /:publicId - Delete gallery image by Cloudinary public ID
+/**
+ * @route DELETE /gallery/:publicId
+ * @desc Delete gallery image by public_id
+ */
 router.delete('/:publicId', async (req, res) => {
   try {
-    const publicId = req.params.publicId; // e.g. "sahas_gallery/1234567890-filename"
-
+    const publicId = decodeURIComponent(req.params.publicId);
     const result = await cloudinary.uploader.destroy(publicId);
 
     if (result.result !== 'ok') {
       return res.status(404).json({ message: 'Image not found or already deleted' });
     }
 
-    // TODO: Remove image record from DB if you store it
-
-    return res.status(200).json({ message: 'Image deleted successfully' });
+    res.status(200).json({ message: 'Gallery image deleted successfully' });
   } catch (error) {
-    console.error('Failed to delete image:', error);
-    res.status(500).json({ message: 'Failed to delete image' });
+    console.error('Gallery Delete Error:', error);
+    res.status(500).json({ message: 'Failed to delete gallery image' });
   }
 });
 

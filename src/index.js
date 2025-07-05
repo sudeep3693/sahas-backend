@@ -19,9 +19,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(CorsMiddleware);
 
-// Removed static file serving since now files are on Cloudinary
 
-// API Routes
 app.use('/admin', LoginRoute);
 app.use('/images', CarouselImageRoute);
 app.use('/financial', FinancialRoute);
