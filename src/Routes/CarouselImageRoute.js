@@ -4,15 +4,13 @@ import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
 import cloudinary from '../utils/cloudinary.js';
 
 const router = Router();
-
-// Use Cloudinary storage, folder: sahas_carousel
 const upload = multer({ storage: createCloudinaryStorage('sahas_carousel') });
 
 /**
- * @route POST /carousel
- * @desc Upload multiple images to Cloudinary
+ * @route POST /images/carousel
+ * @desc Upload images to Cloudinary
  */
-router.post('/carousel', upload.array('images'), (req, res) => {
+router.post('/images/carousel', upload.array('images'), (req, res) => {
   try {
     const files = req.files;
 
@@ -21,8 +19,10 @@ router.post('/carousel', upload.array('images'), (req, res) => {
     }
 
     const uploadedImages = files.map(file => ({
-      url: file.path,                 // Full Cloudinary URL
-      public_id: file.filename,       // public_id for deletion
+      url: file.path,                      // Full Cloudinary URL
+      public_id: file.filename.includes('sahas_carousel')
+        ? file.filename
+        : `sahas_carousel/${file.filename}`,  // Ensure full public_id
     }));
 
     console.log('Uploaded Images:', uploadedImages);
@@ -38,15 +38,15 @@ router.post('/carousel', upload.array('images'), (req, res) => {
 });
 
 /**
- * @route GET /carousel
- * @desc Get list of images directly from Cloudinary (no database)
+ * @route GET /images/carousel
+ * @desc Get images from Cloudinary
  */
-router.get('/carousel', async (req, res) => {
+router.get('/images/carousel', async (req, res) => {
   try {
     const result = await cloudinary.search
       .expression('folder:sahas_carousel')
       .sort_by('created_at', 'desc')
-      .max_results(100) // you can adjust this
+      .max_results(100)
       .execute();
 
     const images = result.resources.map(item => ({
@@ -54,23 +54,20 @@ router.get('/carousel', async (req, res) => {
       public_id: item.public_id,
     }));
 
-    console.log('Fetched Images:', images);
-
     res.status(200).json(images);
   } catch (err) {
-    console.error('Failed to fetch carousel images:', err);
-    res.status(500).json({ message: 'Failed to fetch carousel images' });
+    console.error('Fetch error:', err);
+    res.status(500).json({ message: 'Failed to fetch images' });
   }
 });
 
 /**
- * @route DELETE /carousel/:publicId
- * @desc Delete image from Cloudinary by public_id
+ * @route DELETE /images/carousel/:publicId
+ * @desc Delete image by public_id
  */
-router.delete('/carousel/:publicId', async (req, res) => {
+router.delete('/images/carousel/:publicId', async (req, res) => {
   try {
-    const publicId = req.params.publicId;  // Example: sahas_carousel/filename
-
+    const publicId = decodeURIComponent(req.params.publicId);
     const result = await cloudinary.uploader.destroy(publicId);
 
     if (result.result !== 'ok') {
@@ -79,7 +76,7 @@ router.delete('/carousel/:publicId', async (req, res) => {
 
     res.status(200).json({ message: 'Image deleted successfully' });
   } catch (error) {
-    console.error('Failed to delete image:', error);
+    console.error('Delete error:', error);
     res.status(500).json({ message: 'Failed to delete image' });
   }
 });
