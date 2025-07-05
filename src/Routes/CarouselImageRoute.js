@@ -10,7 +10,7 @@ const upload = multer({ storage: createCloudinaryStorage('sahas_carousel') });
  * @route POST /images/carousel
  * @desc Upload images to Cloudinary
  */
-router.post('/images/carousel', upload.array('images'), (req, res) => {
+router.post('/carousel', upload.array('images'), (req, res) => {
   try {
     const files = req.files;
 
@@ -41,7 +41,7 @@ router.post('/images/carousel', upload.array('images'), (req, res) => {
  * @route GET /images/carousel
  * @desc Get images from Cloudinary
  */
-router.get('/images/carousel', async (req, res) => {
+router.get('/carousel', async (req, res) => {
   try {
     const result = await cloudinary.search
       .expression('folder:sahas_carousel')
@@ -65,7 +65,7 @@ router.get('/images/carousel', async (req, res) => {
  * @route DELETE /images/carousel/:publicId
  * @desc Delete image by public_id
  */
-router.delete('/images/carousel/:publicId', async (req, res) => {
+router.delete('/carousel/:publicId', async (req, res) => {
   try {
     const publicId = decodeURIComponent(req.params.publicId);
     const result = await cloudinary.uploader.destroy(publicId);
