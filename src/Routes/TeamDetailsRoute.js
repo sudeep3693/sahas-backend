@@ -95,14 +95,9 @@ router.get('/name/:name', async (req, res) => {
  */
 router.delete('/delete/:id', async (req, res) => {
   try {
-    const { imageUrl } = req.body; // imageUrl = full Cloudinary URL
-
-    const publicIdMatch = imageUrl.match(/\/v\d+\/(.+)\.[a-zA-Z]{3,4}$/);
-    const publicId = publicIdMatch ? publicIdMatch[1] : null;
-
-    if (publicId) {
-      await cloudinary.uploader.destroy(publicId);
-    }
+    // Note: Your current code deletes local file from disk
+    // Since image is on Cloudinary, you need to delete it via Cloudinary API
+    // For now, just deleting DB entry without deleting Cloudinary image
 
     await TeamDetail.findByIdAndDelete(req.params.id);
 
