@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js'; // your factory
+import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
 import cloudinary from '../utils/cloudinary.js';
 
 const router = Router();
@@ -8,62 +8,76 @@ const router = Router();
 // Use Cloudinary storage, folder: sahas_carousel
 const upload = multer({ storage: createCloudinaryStorage('sahas_carousel') });
 
-// POST /carousel - Upload multiple images
+/**
+ * @route POST /carousel
+ * @desc Upload multiple images to Cloudinary
+ */
 router.post('/carousel', upload.array('images'), (req, res) => {
   try {
     const files = req.files;
-    const descriptions = Array.isArray(req.body.descriptions)
-      ? req.body.descriptions
-      : [req.body.descriptions];
 
     if (!files || files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
-    // Files now have a 'path' property with Cloudinary URLs
-    const uploadedUrls = files.map(f => f.path);
+    const uploadedImages = files.map(file => ({
+      url: file.path,                 // Full Cloudinary URL
+      public_id: file.filename,       // public_id for deletion
+    }));
 
-    console.log('Descriptions:', descriptions);
-    console.log('Files URLs:', uploadedUrls);
+    console.log('Uploaded Images:', uploadedImages);
 
-    return res.status(200).json({ message: 'Images uploaded successfully', images: uploadedUrls });
+    return res.status(200).json({
+      message: 'Images uploaded successfully',
+      images: uploadedImages,
+    });
   } catch (err) {
     console.error('Upload error:', err);
     res.status(500).json({ message: 'Upload failed on server' });
   }
 });
 
-// GET /carousel - Return list of uploaded images (URLs stored in your DB)
-// Since you no longer store files locally, you should store URLs in DB and fetch from there.
-// For demo, this just returns empty array or you can adjust to return DB results.
-
+/**
+ * @route GET /carousel
+ * @desc Get list of images directly from Cloudinary (no database)
+ */
 router.get('/carousel', async (req, res) => {
   try {
-    // TODO: Replace this with fetching image URLs from your database collection for carousel images
-    // Example: const images = await CarouselModel.find().select('imageUrl -_id');
-    // For now, return empty array:
-    const images = [];
-    console.log('Successfully fetched carousel images');
+    const result = await cloudinary.search
+      .expression('folder:sahas_carousel')
+      .sort_by('created_at', 'desc')
+      .max_results(100) // you can adjust this
+      .execute();
+
+    const images = result.resources.map(item => ({
+      url: item.secure_url,
+      public_id: item.public_id,
+    }));
+
+    console.log('Fetched Images:', images);
+
     res.status(200).json(images);
   } catch (err) {
     console.error('Failed to fetch carousel images:', err);
-    res.status(500).json({ error: 'Failed to fetch carousel images' });
+    res.status(500).json({ message: 'Failed to fetch carousel images' });
   }
 });
 
-// DELETE /carousel/:publicId - Delete image from Cloudinary by public ID
+/**
+ * @route DELETE /carousel/:publicId
+ * @desc Delete image from Cloudinary by public_id
+ */
 router.delete('/carousel/:publicId', async (req, res) => {
   try {
-    const publicId = req.params.publicId; // Cloudinary public ID, e.g., "sahas_carousel/1234567890-filename"
+    const publicId = req.params.publicId;  // Example: sahas_carousel/filename
+
     const result = await cloudinary.uploader.destroy(publicId);
 
     if (result.result !== 'ok') {
       return res.status(404).json({ message: 'Image not found or already deleted' });
     }
 
-    // TODO: Also delete image record from your DB if you store URLs/publicIds there
-
-    return res.status(200).json({ message: 'Image deleted successfully' });
+    res.status(200).json({ message: 'Image deleted successfully' });
   } catch (error) {
     console.error('Failed to delete image:', error);
     res.status(500).json({ message: 'Failed to delete image' });
