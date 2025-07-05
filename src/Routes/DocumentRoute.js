@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import Document from '../Model/DocumentModel.js';
-import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
+import { createCloudinaryStoragePdf } from '../utils/CloudnairyPdfStorage.js';
 import cloudinary from '../utils/cloudinary.js';
 import path from 'path';
 
@@ -9,7 +9,7 @@ const router = Router();
 
 // Multer + Cloudinary Storage for PDFs
 // Make sure to allow 'pdf' in allowed_formats in your cloudinaryStorageFactory.js
-const upload = multer({ storage: createCloudinaryStorage('sahas_documents') });
+const upload = multer({ storage: createCloudinaryStoragePdf('sahas_documents') });
 
 /**
  * @desc Upload new document (PDF)
