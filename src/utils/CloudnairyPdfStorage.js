@@ -6,7 +6,7 @@ export const createCloudinaryStoragePdf = (folderName) => {
     cloudinary: cloudinary,
     params: {
       folder: folderName,
-      resource_type: 'raw',        // ✅ This is mandatory for PDFs
+      resource_type: 'raw',     // ✅ VERY IMPORTANT for PDFs
       allowed_formats: ['pdf'],
     },
   });
