@@ -5,7 +5,7 @@ const BasicDetails = new mongoose.Schema({
     name:String,
     email:String,
     telephone:Number,
-    mobile:Number,
+    mobile:String,
     location:String,
     district:String,
     province:String,
