@@ -6,7 +6,7 @@ import Document from '../Model/DocumentModel.js';
 
 const router = Router();
 
-// Create PDF folder if it doesn't exist
+// Ensure pdf directory exists
 const pdfDir = path.join(process.cwd(), 'pdf');
 if (!fs.existsSync(pdfDir)) {
   fs.mkdirSync(pdfDir);
@@ -15,9 +15,9 @@ if (!fs.existsSync(pdfDir)) {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const category = req.body.category; // "reports" or "downloads"
-    const categoryDir = path.join(process.cwd(), 'pdf', category);
+    const categoryDir = path.join(pdfDir, category);
 
-    // Create folder if not exists
+    // Create category folder if missing
     if (!fs.existsSync(categoryDir)) {
       fs.mkdirSync(categoryDir, { recursive: true });
     }
@@ -30,7 +30,6 @@ const storage = multer.diskStorage({
   },
 });
 
-
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
@@ -42,10 +41,7 @@ const upload = multer({
   },
 });
 
-/**
- * @desc Upload new document (PDF)
- * @route POST /documents/save
- */
+// Upload document
 router.post('/save', upload.single('file'), async (req, res) => {
   try {
     const { heading, category } = req.body;
@@ -55,7 +51,8 @@ router.post('/save', upload.single('file'), async (req, res) => {
     const document = new Document({
       heading,
       category,
-      filePath: `/pdf/${req.file.filename}`, // Store relative path for frontend use
+      // Save file path including category (for frontend)
+      filePath: `/pdf/${category}/${req.file.filename}`,
     });
 
     await document.save();
@@ -67,10 +64,7 @@ router.post('/save', upload.single('file'), async (req, res) => {
   }
 });
 
-/**
- * @desc Get all documents
- * @route GET /documents/all
- */
+// Fetch all documents
 router.get('/all', async (req, res) => {
   try {
     const documents = await Document.find().sort({ uploadedAt: -1 });
@@ -80,18 +74,24 @@ router.get('/all', async (req, res) => {
   }
 });
 
-/**
- * @desc Delete document and its file from local storage
- * @route DELETE /documents/delete/:id
- */
+// Fetch by category
+router.get('/category/:category', async (req, res) => {
+  try {
+    const docs = await Document.find({ category: req.params.category }).sort({ uploadedAt: -1 });
+    res.status(200).json(docs);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching documents by category', error });
+  }
+});
+
+// Delete document
 router.delete('/delete/:id', async (req, res) => {
   try {
     const doc = await Document.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Document not found' });
 
-    // Delete PDF file from local storage
     if (doc.filePath) {
-      const filePath = path.join(process.cwd(), doc.filePath);
+      const filePath = path.join(process.cwd(), doc.filePath.replace(/^\//, '')); // remove leading slash
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
@@ -103,19 +103,6 @@ router.delete('/delete/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting document:', error);
     res.status(500).json({ message: 'Failed to delete document', error });
-  }
-});
-
-/**
- * @desc Get documents by category
- * @route GET /documents/category/:category
- */
-router.get('/category/:category', async (req, res) => {
-  try {
-    const docs = await Document.find({ category: req.params.category });
-    res.status(200).json(docs);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching documents by category', error });
   }
 });
 
