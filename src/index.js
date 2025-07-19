@@ -10,6 +10,7 @@ import BasicDetails from './Routes/BasicDetails.js';
 import NewsRoute from './Routes/NewsRoute.js';
 import DocumentRoute from './Routes/DocumentRoute.js';
 import MessageRoute from './Routes/MessageRoute.js';
+import path from 'path';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
