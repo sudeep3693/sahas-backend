@@ -40,15 +40,6 @@ app.use('/messages', MessageRoute);
 // Serve PDFs (local storage)
 app.use('/pdf', express.static(path.join(__dirname, '..', 'pdf')));
 
-// Serve React frontend (assuming your React build is in `client/build`)
-const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
-app.use(express.static(clientBuildPath));
-
-// Catch-all for React Router (SPA routes)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(clientBuildPath, 'index.html'));
-});
-
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
