@@ -11,6 +11,7 @@ import NewsRoute from './Routes/NewsRoute.js';
 import DocumentRoute from './Routes/DocumentRoute.js';
 import MessageRoute from './Routes/MessageRoute.js';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,7 +21,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(CorsMiddleware);
 
+// Resolve __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+// API routes
 app.use('/admin', LoginRoute);
 app.use('/images', CarouselImageRoute);
 app.use('/financial', FinancialRoute);
@@ -32,7 +37,17 @@ app.use('/news', NewsRoute);
 app.use('/documents', DocumentRoute);
 app.use('/messages', MessageRoute);
 
-app.use('/pdf', express.static(path.join(process.cwd(), 'pdf')));
+// Serve PDFs (local storage)
+app.use('/pdf', express.static(path.join(__dirname, '..', 'pdf')));
+
+// Serve React frontend (assuming your React build is in `client/build`)
+const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
+app.use(express.static(clientBuildPath));
+
+// Catch-all for React Router (SPA routes)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientBuildPath, 'index.html'));
+});
 
 // Start server
 app.listen(PORT, () => {
