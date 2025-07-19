@@ -31,6 +31,8 @@ app.use('/news', NewsRoute);
 app.use('/documents', DocumentRoute);
 app.use('/messages', MessageRoute);
 
+app.use('/pdf', express.static(path.join(process.cwd(), 'pdf')));
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

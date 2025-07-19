@@ -1,15 +1,46 @@
 import { Router } from 'express';
 import multer from 'multer';
-import Document from '../Model/DocumentModel.js';
-import { createCloudinaryStoragePdf } from '../utils/CloudnairyPdfStorage.js';
-import cloudinary from '../utils/cloudinary.js';
+import fs from 'fs';
 import path from 'path';
+import Document from '../Model/DocumentModel.js';
 
 const router = Router();
 
-// Multer + Cloudinary Storage for PDFs
-// Make sure to allow 'pdf' in allowed_formats in your cloudinaryStorageFactory.js
-const upload = multer({ storage: createCloudinaryStoragePdf('sahas_documents') });
+// Create PDF folder if it doesn't exist
+const pdfDir = path.join(process.cwd(), 'pdf');
+if (!fs.existsSync(pdfDir)) {
+  fs.mkdirSync(pdfDir);
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const category = req.body.category; // "reports" or "downloads"
+    const categoryDir = path.join(process.cwd(), 'pdf', category);
+
+    // Create folder if not exists
+    if (!fs.existsSync(categoryDir)) {
+      fs.mkdirSync(categoryDir, { recursive: true });
+    }
+
+    cb(null, categoryDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${file.originalname}`;
+    cb(null, uniqueName);
+  },
+});
+
+
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'), false);
+    }
+  },
+});
 
 /**
  * @desc Upload new document (PDF)
@@ -24,8 +55,7 @@ router.post('/save', upload.single('file'), async (req, res) => {
     const document = new Document({
       heading,
       category,
-      filePath: req.file.path,    // Cloudinary URL to PDF
-      publicId: req.file.filename || req.file.public_id, // store public ID for deletion (depends on multer-storage-cloudinary version)
+      filePath: `/pdf/${req.file.filename}`, // Store relative path for frontend use
     });
 
     await document.save();
@@ -51,7 +81,7 @@ router.get('/all', async (req, res) => {
 });
 
 /**
- * @desc Delete document and its file from Cloudinary
+ * @desc Delete document and its file from local storage
  * @route DELETE /documents/delete/:id
  */
 router.delete('/delete/:id', async (req, res) => {
@@ -59,9 +89,12 @@ router.delete('/delete/:id', async (req, res) => {
     const doc = await Document.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Document not found' });
 
-    // Delete file from Cloudinary using publicId
-    if (doc.publicId) {
-      await cloudinary.uploader.destroy(doc.publicId);
+    // Delete PDF file from local storage
+    if (doc.filePath) {
+      const filePath = path.join(process.cwd(), doc.filePath);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
 
     await Document.findByIdAndDelete(req.params.id);
