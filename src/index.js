@@ -10,6 +10,7 @@ import BasicDetails from './Routes/BasicDetails.js';
 import NewsRoute from './Routes/NewsRoute.js';
 import DocumentRoute from './Routes/DocumentRoute.js';
 import MessageRoute from './Routes/MessageRoute.js';
+import ForgetPassword from './Routes/ForgetPassword.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -36,6 +37,8 @@ app.use('/teamDetail', TeamDetailRoute);
 app.use('/news', NewsRoute);
 app.use('/documents', DocumentRoute);
 app.use('/messages', MessageRoute);
+app.use('/credintial', ForgetPassword);
+
 
 // Serve PDFs (local storage)
 app.use('/pdf', express.static(path.join(__dirname, '..', 'pdf')));
