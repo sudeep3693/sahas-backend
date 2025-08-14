@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: "sudeepsubedi72@gmail.com",
-    pass: "qddo oqkj cixq sgnk",
+    pass: "qddo oqkj cixq sgnk", // ⚠️ Should be stored in env variable
   },
 });
 
@@ -63,6 +63,39 @@ router.post('/verify', (req, res) => {
 
   delete otpStore[email];
   res.json({ message: 'OTP verified successfully' });
+});
+
+/**
+ * @route POST /password/generate
+ * @desc Generate random 8-character password and send via email
+ */
+router.post('/password/generate', (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email is required' });
+
+  // Generate 8-char password (letters + digits)
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let password = '';
+  for (let i = 0; i < 8; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  const mailOptions = {
+    from: process.env.GMAIL_USER || "sudeepsubedi72@gmail.com",
+    to: email,
+    subject: 'Your New Password',
+    text: `Your new password is: ${password}`,
+  };
+
+  transporter.sendMail(mailOptions, (error) => {
+    if (error) {
+      console.error('Password Send Error:', error);
+      return res.status(500).json({ message: 'Failed to send password' });
+    }
+
+    // TODO: Save hashed password to DB if needed
+    res.json({ message: 'Password sent successfully', password });
+  });
 });
 
 export default router;
