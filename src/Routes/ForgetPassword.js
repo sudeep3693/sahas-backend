@@ -27,7 +27,7 @@ router.post('/send', (req, res) => {
   otpStore[email] = { otp, expiresAt: Date.now() + 5 * 60 * 1000 }; // expires in 5 mins
 
   const mailOptions = {
-    from: process.env.GMAIL_USER,
+    from: process.env.GMAIL_USER || "sudeepsubedi72@gmail.com",
     to: email,
     subject: 'Your OTP Code',
     text: `Your OTP code is ${otp}. It will expire in 5 minutes.`,
