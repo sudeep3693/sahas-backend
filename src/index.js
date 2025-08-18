@@ -37,7 +37,7 @@ app.use('/teamDetail', TeamDetailRoute);
 app.use('/news', NewsRoute);
 app.use('/documents', DocumentRoute);
 app.use('/messages', MessageRoute);
-app.use('/credintial', ForgetPassword);
+app.use('/credential', ForgetPassword);
 
 
 // Serve PDFs (local storage)
