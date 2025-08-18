@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import Credintal from '../Model/Credintals.js';
 import { encrypt } from '../AesUtil.js';
+import { enc } from 'crypto-js';
 
 const router = Router();
 
@@ -157,11 +158,12 @@ router.post('/password/change', async (req, res) => {
       return res.status(400).json({ message: 'Email, previous password, and new password are required' });
     }
 
-    const user = await Credintal.findOne({ username: email });
+    const encryptedUsername = encrypt(email);
+    const user = await Credintal.findOne({ username: encryptedUsername });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    const encryptedPreviousPassword =encrypt(previousPassword);
+    const encryptedPreviousPassword = encrypt(previousPassword);
 
     if (user.password !== encryptedPreviousPassword) {
       return res.status(400).json({ message: 'Previous password is incorrect' });
