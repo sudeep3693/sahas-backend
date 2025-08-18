@@ -25,9 +25,10 @@ router.post('/send', async (req, res) => {
 
     const otp = crypto.randomInt(100000, 999999).toString();
 
+    const encryptedUsername = encrypt(email);
     // Save OTP + expiry in DB
     await Credintal.findOneAndUpdate(
-      { username: email },
+      { username: encryptedUsername },
       {
         otp_secret: otp,
         otp_expiry: new Date(Date.now() + 5 * 60 * 1000),
@@ -64,7 +65,8 @@ router.post('/verify', async (req, res) => {
     const { email, otp } = req.body;
     if (!email || !otp) return res.status(400).json({ message: 'Email and OTP are required' });
 
-    const user = await Credintal.findOne({ username: email });
+    const encryptedUsername = encrypt(email);
+    const user = await Credintal.findOne({ username: encryptedUsername });
     if (!user || !user.otp_secret) {
       return res.status(400).json({ message: 'OTP not found. Please request again.' });
     }
@@ -108,6 +110,7 @@ router.post('/password/generate', async (req, res) => {
     }
 
     const encryptedPassword = encrypt(password);
+    const encryptedUsername = encrypt(email);
 
     const mailOptions = {
       from: process.env.GMAIL_USER || "sudeepsubedi72@gmail.com",
@@ -124,7 +127,7 @@ router.post('/password/generate', async (req, res) => {
 
       try {
         await Credintal.findOneAndUpdate(
-          { username: email },
+          { username: encryptedUsername },
           { password: encryptedPassword },
           { new: true, upsert: true }
         );
