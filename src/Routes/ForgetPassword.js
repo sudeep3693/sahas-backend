@@ -3,7 +3,6 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import Credintal from '../Model/Credintals.js';
 import { encrypt } from '../AesUtil.js';
-import { enc } from 'crypto-js';
 
 const router = Router();
 
