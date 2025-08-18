@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import Credintal from '../Model/Credintals.js';
+import AesUtil from '../AesUtil.js';
 
 const router = Router();
 
@@ -29,7 +31,7 @@ router.post('/send', (req, res) => {
   const mailOptions = {
     from: process.env.GMAIL_USER || "sudeepsubedi72@gmail.com",
     to: email,
-    subject: 'Your OTP Code',
+    subject: 'Sahas OTP Code',
     text: `Your OTP code is ${otp}. It will expire in 5 minutes.`,
   };
 
@@ -69,33 +71,50 @@ router.post('/verify', (req, res) => {
  * @route POST /password/generate
  * @desc Generate random 8-character password and send via email
  */
-router.post('/password/generate', (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ message: 'Email is required' });
+router.post('/password/generate', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
 
-  // Generate 8-char password (letters + digits)
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let password = '';
-  for (let i = 0; i < 8; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-
-  const mailOptions = {
-    from: process.env.GMAIL_USER || "sudeepsubedi72@gmail.com",
-    to: email,
-    subject: 'Your New Password',
-    text: `Your new password is: ${password}`,
-  };
-
-  transporter.sendMail(mailOptions, (error) => {
-    if (error) {
-      console.error('Password Send Error:', error);
-      return res.status(500).json({ message: 'Failed to send password' });
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
 
-    // TODO: Save hashed password to DB if needed
-    res.json({ message: 'Password sent successfully', password });
-  });
+    const encryptedPassword = AesUtil.encrypt(password);
+
+    const mailOptions = {
+      from: process.env.GMAIL_USER || "sudeepsubedi72@gmail.com",
+      to: email,
+      subject: 'Your Website New Password',
+      text: `Your new password is: ${password}`,
+    };
+
+    transporter.sendMail(mailOptions, async (error) => {
+      if (error) {
+        console.error('Password Send Error:', error);
+        return res.status(500).json({ message: 'Failed to send password' });
+      }
+
+      try {
+        await Credintal.findOneAndUpdate(
+          { username: email },
+          { password: encryptedPassword },
+          { new: true, upsert: true }
+        );
+
+        res.json({ message: 'Password sent and updated successfully' });
+      } catch (dbErr) {
+        console.error('DB Update Error:', dbErr);
+        res.status(500).json({ message: 'Email sent, but DB update failed' });
+      }
+    });
+
+  } catch (err) {
+    console.error('Password Generate Error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 export default router;
