@@ -2,7 +2,7 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import Credintal from '../Model/Credintals.js';
-import AesUtil from '../AesUtil.js';
+import { encrypt } from '../AesUtil.js';
 
 const router = Router();
 
@@ -107,7 +107,7 @@ router.post('/password/generate', async (req, res) => {
       password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
 
-    const encryptedPassword = AesUtil.encrypt(password);
+    const encryptedPassword = encrypt(password);
 
     const mailOptions = {
       from: process.env.GMAIL_USER || "sudeepsubedi72@gmail.com",
@@ -158,12 +158,12 @@ router.post('/password/change', async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    const encryptedPreviousPassword = AesUtil.encrypt(previousPassword);
+    const encryptedPreviousPassword =encrypt(previousPassword);
 
     if (user.password !== encryptedPreviousPassword) {
       return res.status(400).json({ message: 'Previous password is incorrect' });
     }
-    const encryptedNewPassword = AesUtil.encrypt(newPassword);
+    const encryptedNewPassword = encrypt(newPassword);
     user.password = encryptedNewPassword;
     await user.save();
 
