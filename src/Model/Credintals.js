@@ -10,6 +10,14 @@ const CredintalSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  otp_secret: {
+    type: String,
+    required: false,
+  },
+  otp_expiry: {
+    type: Date,
+    required: false,
+  },
 });
 
 const Credintal = mongoose.model('Credintal', CredintalSchema);
