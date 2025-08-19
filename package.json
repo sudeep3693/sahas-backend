@@ -4,8 +4,7 @@
   "description": "Express backend deployed on cPanel",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "start": "node src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -21,9 +20,6 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^7.0.5",
     "statuses": "^2.0.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
   },
   "engines": {
     "node": "18.x"
