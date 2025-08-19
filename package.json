@@ -1,12 +1,10 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "./src/index.js",
+  "description": "Express backend deployed on cPanel",
+  "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start:dev": "nodemon ./src/index.js",
-    "start": "node ./src/index.js"
+    "start": "node src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -18,13 +16,12 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.0",
-    "mongose": "^0.0.2-security",
     "multer": "^2.0.1",
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^7.0.5",
     "statuses": "^2.0.2"
   },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
+  "engines": {
+    "node": "18.x"
   }
 }
