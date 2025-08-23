@@ -19,12 +19,12 @@ router.post('/save/:type', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Image is required' });
 
-    // req.file.path contains the Cloudinary URL of uploaded image
     const teamDetail = new TeamDetail({
       name: req.body.name,
       position: req.body.position,
       category: req.params.type,
-      imageName: req.file.path,  // Save Cloudinary URL here
+      imageName: req.file.path, 
+      positionOrder: req.body.positionOrder ? parseInt(req.body.positionOrder, 10) : 0,
     });
 
     await teamDetail.save();
