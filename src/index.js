@@ -1,4 +1,5 @@
 import express from 'express';
+import 'dotenv/config';
 import LoginRoute from './Routes/LoginRoute.js';
 import CorsMiddleware from './MiddleWare/CorsMiddleware.js';
 import CarouselImageRoute from './Routes/CarouselImageRoute.js';
@@ -15,7 +16,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());

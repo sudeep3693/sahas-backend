@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import crypto from 'crypto';
+import 'dotenv/config';
 import nodemailer from 'nodemailer';
 import Credintal from '../Model/Credintals.js';
 import { encrypt } from '../AesUtil.js';
@@ -9,8 +10,8 @@ const router = Router();
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: "sudeepsubedi72@gmail.com",
-    pass: "qddo oqkj cixq sgnk", // ⚠️ Should be stored in env variable
+    user: process.env.GMAIL_USER,
+    pass: process.env.PASSWORD,
   },
 });
 
@@ -37,7 +38,7 @@ router.post('/send', async (req, res) => {
     );
 
     const mailOptions = {
-      from: process.env.GMAIL_USER || "sudeepsubedi72@gmail.com",
+      from: process.env.GMAIL_USER,
       to: email,
       subject: 'Sahas OTP Code',
       text: `Your OTP code is ${otp}. It will expire in 5 minutes.`,
@@ -113,7 +114,7 @@ router.post('/password/generate', async (req, res) => {
     const encryptedUsername = encrypt(email);
 
     const mailOptions = {
-      from: process.env.GMAIL_USER || "sudeepsubedi72@gmail.com",
+      from: process.env.GMAIL_USER,
       to: email,
       subject: 'Your Website New Password',
       text: `Your new password is: ${password}`,

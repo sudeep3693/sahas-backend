@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Express backend deployed on cPanel",
+  "description": "Sahas backend deployed on cPanel",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js"
@@ -13,6 +13,7 @@
   "dependencies": {
     "cloudinary": "^1.41.3",
     "crypto-js": "^4.2.0",
+    "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.0",
