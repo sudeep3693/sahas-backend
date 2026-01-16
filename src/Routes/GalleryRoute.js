@@ -51,6 +51,7 @@ router.get('/', async (req, res) => {
 
     const images = result.resources.map(item => ({
       url: item.secure_url,
+      public_id: item.public_id,
     }));
 
     res.status(200).json(images);
