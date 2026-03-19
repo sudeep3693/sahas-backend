@@ -1,10 +1,7 @@
 import { Router } from 'express';
-import DBConnect from '../MiddleWare/DatabaseConnection.js';
 import BasicDetails from '../Model/BasicDetails.js';
 const router = Router();
 
-
-router.use(DBConnect);
 router.post("/basicDetails", async (request, response) => {
   try {
     const filter = {};
@@ -31,7 +28,7 @@ router.get("/getBasicDetails", async (request,response)=>{
     response.status(200).json(data);
   }
   catch(error){
-console.error("Error retriving record: ", error);
+    console.error("Error retriving record: ", error);
     response.status(500).json({ error: "Server error" });
 
   }

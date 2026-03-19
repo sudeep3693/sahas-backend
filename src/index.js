@@ -1,5 +1,6 @@
 import express from 'express';
 import 'dotenv/config';
+import connectDB from './MiddleWare/DatabaseConnection.js';
 import LoginRoute from './Routes/LoginRoute.js';
 import CorsMiddleware from './MiddleWare/CorsMiddleware.js';
 import CarouselImageRoute from './Routes/CarouselImageRoute.js';
@@ -40,13 +41,14 @@ app.use('/documents', DocumentRoute);
 app.use('/messages', MessageRoute);
 app.use('/credential', ForgetPassword);
 
-
 // Serve PDFs (local storage)
 app.use('/pdf', express.static(path.join(__dirname, '..', 'pdf')));
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Connect to database, then start server
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 });
 
 export default app;
