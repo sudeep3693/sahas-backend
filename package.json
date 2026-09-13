@@ -4,7 +4,8 @@
   "description": "Sahas backend deployed on cPanel",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -14,7 +15,7 @@
     "cloudinary": "^1.41.3",
     "crypto-js": "^4.2.0",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.0",
     "multer": "^2.0.1",
@@ -23,6 +24,6 @@
     "statuses": "^2.0.2"
   },
   "engines": {
-    "node": "18.x"
+    "node": ">=18.0.0"
   }
 }
