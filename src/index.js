@@ -1,5 +1,8 @@
 import express from 'express';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config();
+dotenv.config({ path: 'Static.env' });
+import mongoose from 'mongoose';
 import LoginRoute from './Routes/LoginRoute.js';
 import CorsMiddleware from './MiddleWare/CorsMiddleware.js';
 import CarouselImageRoute from './Routes/CarouselImageRoute.js';
@@ -17,6 +20,12 @@ import { fileURLToPath } from 'url';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://sudeepsubedi72:wdf4A8ypJKVMxunU@sahascooperative.eyybn0u.mongodb.net/SahasCooperative?retryWrites=true&w=majority&appName=SahasCooperative';
+
+// Connect to MongoDB
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('MongoDB connected successfully'))
+  .catch((err) => console.error('MongoDB connection error:', err));
 
 // Middleware
 app.use(express.json());
