@@ -4,7 +4,7 @@
   "description": "Sahas backend deployed on cPanel",
   "main": "app.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node src/start.js",
     "dev": "node --watch src/index.js"
   },
   "keywords": [],

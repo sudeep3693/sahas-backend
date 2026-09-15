@@ -29,16 +29,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://sudeepsubedi72:AXJAf0rd3sMjlpdi@sahascooperative.eyybn0u.mongodb.net/SahasCooperative?retryWrites=true&w=majority&appName=SahasCooperative';
-
-
-// Connect to MongoDB
-mongoose.connect(MONGO_URI)
-  .then(() => logger.info('MongoDB connected successfully'))
-  .catch((err) => logger.error('MongoDB connection error', err));
+const PORT = Number(process.env.PORT) || 3001;
+const MONGO_URI = process.env.MONGO_URI;
 
 // Middleware
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(CorsMiddleware);
@@ -51,6 +47,14 @@ const __dirname = path.dirname(__filename);
 // API routes
 app.get('/', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Sahas Cooperative Backend API is running successfully' });
+});
+
+app.get('/health', (req, res) => {
+  const databaseReady = mongoose.connection.readyState === 1;
+  res.status(databaseReady ? 200 : 503).json({
+    status: databaseReady ? 'ok' : 'degraded',
+    database: databaseReady ? 'connected' : 'disconnected',
+  });
 });
 
 app.use('/admin', LoginRoute);
@@ -68,11 +72,49 @@ app.use('/credential', ForgetPassword);
 // Serve PDFs (local storage)
 app.use('/pdf', express.static(path.join(__dirname, '..', 'pdf')));
 
-// Start server
-app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-  logger.info(`Log directory: ${process.cwd()}/logs  (writing YYYY-MM-DD.log)`);
+app.use((req, res) => {
+  res.status(404).json({ message: 'Endpoint not found' });
 });
 
+app.use((error, req, res, next) => {
+  logger.error('Unhandled request error', error);
+  if (res.headersSent) return next(error);
+
+  const statusCode = Number.isInteger(error.statusCode) && error.statusCode >= 400
+    ? error.statusCode
+    : 500;
+  const message = statusCode >= 500 && process.env.NODE_ENV === 'production'
+    ? 'Internal server error'
+    : error.message || 'Request failed';
+  res.status(statusCode).json({ message });
+});
+
+const startServer = async () => {
+  if (!MONGO_URI) throw new Error('MONGO_URI is not configured');
+
+  await mongoose.connect(MONGO_URI, {
+    serverSelectionTimeoutMS: Number(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS) || 10000,
+  });
+  logger.info('MongoDB connected successfully');
+
+  app.listen(PORT, () => {
+    logger.info(`Server running on port ${PORT}`);
+    logger.info(`Log directory: ${process.cwd()}/logs (writing YYYY-MM-DD.log)`);
+  });
+};
+
+startServer().catch((error) => {
+  logger.error('Backend startup failed', error);
+  process.exitCode = 1;
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled promise rejection', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught exception', error);
+  process.exit(1);
+});
 
 export default app;
