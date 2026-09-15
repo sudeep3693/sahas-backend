@@ -1,5 +1,4 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import dns from 'dns';
 import logger from './utils/logger.js';
 
@@ -10,8 +9,6 @@ try {
   // Ignore error if environment restricts changing DNS servers
 }
 
-dotenv.config();
-dotenv.config({ path: 'Static.env' });
 import mongoose from 'mongoose';
 import LoginRoute from './Routes/LoginRoute.js';
 import CorsMiddleware from './MiddleWare/CorsMiddleware.js';

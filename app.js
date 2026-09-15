@@ -1,12 +1,6 @@
-// CommonJS launcher for LiteSpeed / cPanel Node runner
-// Dynamically imports the ES Module backend inside src/index.js
+// cPanel/LiteSpeed launcher. Configuration is loaded by src/start.js.
 
-import('dotenv')
-  .then(({ default: dotenv }) => {
-    dotenv.config();
-    dotenv.config({ path: 'Static.env', override: true });
-    return import('./src/index.js');
-  })
+import('./src/start.js')
   .then(() => {
     console.log('Backend ES module initialized successfully');
   })

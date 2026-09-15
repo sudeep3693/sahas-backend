@@ -6,7 +6,11 @@ const CorsMiddleware = (req, res, next) => {
     .split(',')
     .map((origin) => origin.trim().replace(/\/$/, ''))
     .filter(Boolean);
-  const originAllowed = !requestOrigin || configuredOrigins.includes(requestOrigin);
+  const developmentOrigins = process.env.NODE_ENV === 'production'
+    ? []
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001'];
+  const allowedOrigins = new Set([...configuredOrigins, ...developmentOrigins]);
+  const originAllowed = !requestOrigin || allowedOrigins.has(requestOrigin);
 
   if (!originAllowed) {
     logger.warn('CORS origin rejected', { origin: requestOrigin, path: req.originalUrl });
