@@ -37,6 +37,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // API routes
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Sahas Cooperative Backend API is running successfully' });
+});
+
 app.use('/admin', LoginRoute);
 app.use('/images', CarouselImageRoute);
 app.use('/financial', FinancialRoute);
@@ -49,7 +53,6 @@ app.use('/documents', DocumentRoute);
 app.use('/messages', MessageRoute);
 app.use('/credential', ForgetPassword);
 
-
 // Serve PDFs (local storage)
 app.use('/pdf', express.static(path.join(__dirname, '..', 'pdf')));
 
@@ -57,5 +60,6 @@ app.use('/pdf', express.static(path.join(__dirname, '..', 'pdf')));
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
 
 export default app;
