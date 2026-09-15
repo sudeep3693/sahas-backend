@@ -1,8 +1,11 @@
 /**
  * logger.js
- * Simple file-based logger. Writes timestamped logs to logs/app.log
- * This file is visible on the server via cPanel File Manager under
- * repositories/sahas-backend/logs/app.log
+ * Date-based file logger. Creates one log file per day:
+ *   logs/2026-09-15.log
+ *   logs/2026-09-16.log  (new file automatically at midnight)
+ *
+ * Visible on the server via cPanel File Manager at:
+ *   repositories/sahas-backend/logs/YYYY-MM-DD.log
  *
  * Uses only Node.js built-ins — no extra npm dependencies needed.
  */
@@ -16,20 +19,46 @@ const __dirname = path.dirname(__filename);
 
 // logs/ directory lives at sahas-backend/logs/
 const LOG_DIR = path.join(__dirname, '..', '..', 'logs');
-const LOG_FILE = path.join(LOG_DIR, 'app.log');
 
 // Create logs directory if it does not exist
 if (!fs.existsSync(LOG_DIR)) {
   fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 
-/** Returns a human-readable timestamp: YYYY-MM-DD HH:MM:SS */
-function timestamp() {
-  return new Date().toISOString().replace('T', ' ').substring(0, 19);
+/**
+ * Returns today's date string in YYYY-MM-DD format (local time).
+ * This is used as the log file name so a new file is created each day.
+ */
+function todayDate() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm   = String(now.getMonth() + 1).padStart(2, '0');
+  const dd   = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 /**
- * Core write — appends one line to app.log and echoes to stdout/stderr.
+ * Returns the full path to today's log file, e.g. logs/2026-09-15.log
+ * Called fresh on every write so the date rolls over at midnight automatically.
+ */
+function todayLogFile() {
+  return path.join(LOG_DIR, `${todayDate()}.log`);
+}
+
+/** Returns a full timestamp string: YYYY-MM-DD HH:MM:SS */
+function timestamp() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm   = String(now.getMonth() + 1).padStart(2, '0');
+  const dd   = String(now.getDate()).padStart(2, '0');
+  const hh   = String(now.getHours()).padStart(2, '0');
+  const min  = String(now.getMinutes()).padStart(2, '0');
+  const sec  = String(now.getSeconds()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}:${sec}`;
+}
+
+/**
+ * Core write — appends one line to today's date log file and echoes to stdout/stderr.
  * @param {'INFO '|'WARN '|'ERROR'} level
  * @param {string} message
  * @param {Error|object|string|undefined} extra
@@ -54,8 +83,8 @@ function write(level, message, extra) {
 
   const fullLine = line + '\n';
 
-  // Async append — will not crash the server on failure
-  fs.appendFile(LOG_FILE, fullLine, (err) => {
+  // Append to today's log file (async — will not crash the server on failure)
+  fs.appendFile(todayLogFile(), fullLine, (err) => {
     if (err) process.stderr.write(`[LOGGER] Cannot write to log file: ${err.message}\n`);
   });
 
@@ -85,7 +114,7 @@ const logger = {
   requestMiddleware(req, res, next) {
     const start = Date.now();
     res.on('finish', () => {
-      const ms = Date.now() - start;
+      const ms  = Date.now() - start;
       const lvl = res.statusCode >= 500 ? 'ERROR' : res.statusCode >= 400 ? 'WARN ' : 'INFO ';
       write(lvl, `${req.method} ${req.originalUrl} → ${res.statusCode} (${ms}ms) [${req.ip || req.socket?.remoteAddress || 'unknown'}]`);
     });
