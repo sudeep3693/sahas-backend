@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Sahas backend deployed on cPanel",
-  "main": "src/index.js",
+  "main": "app.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
@@ -10,7 +10,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "dependencies": {
     "cloudinary": "^1.41.3",
     "crypto-js": "^4.2.0",
