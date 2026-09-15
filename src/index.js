@@ -1,5 +1,14 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import dns from 'dns';
+
+// Fix local router DNS SRV lookup issues (querySrv ECONNREFUSED)
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {
+  // Ignore error if environment restricts changing DNS servers
+}
+
 dotenv.config();
 dotenv.config({ path: 'Static.env' });
 import mongoose from 'mongoose';
@@ -20,7 +29,8 @@ import { fileURLToPath } from 'url';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://sudeepsubedi72:wdf4A8ypJKVMxunU@sahascooperative.eyybn0u.mongodb.net/SahasCooperative?retryWrites=true&w=majority&appName=SahasCooperative';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://sudeepsubedi72:AXJAf0rd3sMjlpdi@sahascooperative.eyybn0u.mongodb.net/SahasCooperative?retryWrites=true&w=majority&appName=SahasCooperative';
+
 
 // Connect to MongoDB
 mongoose.connect(MONGO_URI)
