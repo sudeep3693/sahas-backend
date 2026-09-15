@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import DBConnect from '../MiddleWare/DatabaseConnection.js';
 import BasicDetails from '../Model/BasicDetails.js';
+import logger from '../utils/logger.js';
 const router = Router();
 
 
@@ -13,13 +14,13 @@ router.post("/basicDetails", async (request, response) => {
 
     const updatedData = await BasicDetails.findOneAndUpdate(filter, update, options);
 
-    console.log("Upserted Record:", updatedData);
+    logger.info('BasicDetails upserted', { id: updatedData?._id });
     response.status(200).json({
       message: "Data saved or updated successfully",
       data: updatedData
     });
   } catch (error) {
-    console.error("Error saving/updating DB:", error);
+    logger.error('Error saving/updating BasicDetails', error);
     response.status(500).json({ error: "Server error", details: error.message || String(error) });
   }
 });
@@ -27,11 +28,11 @@ router.post("/basicDetails", async (request, response) => {
 router.get("/getBasicDetails", async (request,response)=>{
   try{
     const data = await BasicDetails.find();
-    console.log("data received :",data);
+    logger.info(`BasicDetails fetched: ${data.length} record(s)`);
     response.status(200).json(data);
   }
   catch(error){
-    console.error("Error retriving record: ", error);
+    logger.error('Error retrieving BasicDetails', error);
     response.status(500).json({ error: "Server error", details: error.message || String(error) });
   }
 })

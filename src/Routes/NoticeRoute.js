@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
 import cloudinary from '../utils/cloudinary.js';
+import logger from '../utils/logger.js';
 
 const router = Router();
 const upload = multer({ storage: createCloudinaryStorage('sahas_notice') });
@@ -27,12 +28,13 @@ router.post('/', upload.array('images'), (req, res) => {
 
     console.log('Uploaded Notice Images:', uploadedImages);
 
+    logger.info(`Notice: ${uploadedImages.length} image(s) uploaded`);
     res.status(200).json({
       message: 'Notice images uploaded successfully',
       images: uploadedImages,
     });
   } catch (err) {
-    console.error('Notice Upload Error:', err);
+    logger.error('Notice upload error', err);
     res.status(500).json({ message: 'Notice upload failed on server', error: err.message || String(err) });
   }
 });
@@ -54,9 +56,10 @@ router.get('/', async (req, res) => {
       public_id: item.public_id,
     }));
 
+    logger.info(`Notice: ${images.length} image(s) fetched`);
     res.status(200).json(images);
   } catch (err) {
-    console.error('Notice Fetch Error:', err);
+    logger.error('Notice fetch error', err);
     res.status(500).json({ message: 'Failed to fetch notice images', error: err.message || String(err) });
   }
 });
@@ -74,9 +77,10 @@ router.delete('/:publicId', async (req, res) => {
       return res.status(404).json({ message: 'Image not found or already deleted' });
     }
 
+    logger.info(`Notice image deleted: ${publicId}`);
     res.status(200).json({ message: 'Notice image deleted successfully' });
   } catch (error) {
-    console.error('Notice Delete Error:', error);
+    logger.error('Notice delete error', error);
     res.status(500).json({ message: 'Failed to delete notice image', error: error.message || String(error) });
   }
 });

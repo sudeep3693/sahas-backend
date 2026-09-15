@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
 import cloudinary from '../utils/cloudinary.js';
+import logger from '../utils/logger.js';
 
 const router = Router();
 const upload = multer({ storage: createCloudinaryStorage('sahas_gallery') });
@@ -27,12 +28,13 @@ router.post('/', upload.array('images'), (req, res) => {
 
     console.log('Uploaded Gallery Images:', uploadedImages);
 
+    logger.info(`Gallery: ${uploadedImages.length} image(s) uploaded`);
     res.status(200).json({
       message: 'Gallery images uploaded successfully',
       images: uploadedImages,
     });
   } catch (err) {
-    console.error('Gallery Upload Error:', err);
+    logger.error('Gallery upload error', err);
     res.status(500).json({ message: 'Gallery upload failed on server', error: err.message || String(err) });
   }
 });
@@ -53,9 +55,10 @@ router.get('/', async (req, res) => {
       url: item.secure_url,
     }));
 
+    logger.info(`Gallery: ${images.length} image(s) fetched`);
     res.status(200).json(images);
   } catch (err) {
-    console.error('Gallery Fetch Error:', err);
+    logger.error('Gallery fetch error', err);
     res.status(500).json({ message: 'Failed to fetch gallery images', error: err.message || String(err) });
   }
 });
@@ -73,9 +76,10 @@ router.delete('/:publicId', async (req, res) => {
       return res.status(404).json({ message: 'Image not found or already deleted' });
     }
 
+    logger.info(`Gallery image deleted: ${publicId}`);
     res.status(200).json({ message: 'Gallery image deleted successfully' });
   } catch (error) {
-    console.error('Gallery Delete Error:', error);
+    logger.error('Gallery delete error', error);
     res.status(500).json({ message: 'Failed to delete gallery image', error: error.message || String(error) });
   }
 });

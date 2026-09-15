@@ -3,6 +3,7 @@ import multer from 'multer';
 import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
 import NewsModel from '../Model/NewsModel.js';
 import cloudinary from '../utils/cloudinary.js';
+import logger from '../utils/logger.js';
 
 const router = Router();
 
@@ -27,7 +28,7 @@ router.post('/save', upload.single('image'), async (req, res) => {
     });
 
     await newsModel.save();
-
+    logger.info(`News saved: "${newsModel.heading}" (id: ${newsModel._id})`);
     res.status(201).json({
       message: 'Successfully saved news data',
       data: {
@@ -35,11 +36,11 @@ router.post('/save', upload.single('image'), async (req, res) => {
         heading: newsModel.heading,
         date: newsModel.date,
         description: newsModel.newsDescription,
-        imageName: newsModel.imageName,  // Full URL
+        imageName: newsModel.imageName,
       },
     });
   } catch (error) {
-    console.error('Error saving news detail:', error);
+    logger.error('Error saving news', error);
     res.status(500).json({ message: 'Server error while saving news detail', error: error.message || String(error) });
   }
 });
@@ -60,8 +61,10 @@ router.get('/all', async (req, res) => {
       imageName: news.imageName,
     }));
 
+    logger.info(`News fetched: ${formattedNews.length} record(s)`);
     res.status(200).json(formattedNews);
   } catch (error) {
+    logger.error('Error fetching news', error);
     res.status(500).json({ message: 'Failed to fetch news details', error: error.message || String(error) });
   }
 });
@@ -78,10 +81,10 @@ router.delete('/delete/:id', async (req, res) => {
 
     const publicId = news.imageName.split('/').pop().split('.')[0];
     await cloudinary.uploader.destroy(`sahas_news/${publicId}`);
-
+    logger.info(`News deleted: ${req.params.id}`);
     res.status(200).json({ message: 'Deleted successfully' });
   } catch (error) {
-    console.error('Error deleting news detail:', error);
+    logger.error('Error deleting news', error);
     res.status(500).json({ message: 'Failed to delete', error: error.message || String(error) });
   }
 });

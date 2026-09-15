@@ -3,6 +3,7 @@ import multer from 'multer';
 import Message from '../Model/MessageModel.js';
 import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
 import cloudinary from '../utils/cloudinary.js';
+import logger from '../utils/logger.js';
 
 const router = Router();
 const upload = multer({ storage: createCloudinaryStorage('sahas_messages') });
@@ -30,10 +31,11 @@ router.post('/save', upload.single('image'), async (req, res) => {
     });
 
     await newMessage.save();
+    logger.info(`Message saved for position: ${position}`);
     res.status(201).json({ message: 'Saved successfully', data: newMessage });
   } catch (error) {
-    console.error('Save message error:', error);
-    res.status(500).json({ message: 'Server error', error });
+    logger.error('Save message error', error);
+    res.status(500).json({ message: 'Server error', error: error.message || String(error) });
   }
 });
 
@@ -43,9 +45,10 @@ router.post('/save', upload.single('image'), async (req, res) => {
 router.get('/all', async (req, res) => {
   try {
     const messages = await Message.find();
+    logger.info(`Messages fetched: ${messages.length} record(s)`);
     res.status(200).json(messages);
   } catch (error) {
-    console.error('Fetch messages error:', error);
+    logger.error('Fetch messages error', error);
     res.status(500).json({ message: 'Failed to fetch messages', error: error.message || error });
   }
 });
@@ -64,10 +67,11 @@ router.delete('/delete/:id', async (req, res) => {
     }
 
     await Message.findByIdAndDelete(req.params.id);
+    logger.info(`Message deleted: ${req.params.id}`);
     res.status(200).json({ message: 'Deleted successfully' });
   } catch (error) {
-    console.error('Delete error:', error);
-    res.status(500).json({ message: 'Delete failed', error });
+    logger.error('Delete message error', error);
+    res.status(500).json({ message: 'Delete failed', error: error.message || String(error) });
   }
 });
 

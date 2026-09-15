@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import dns from 'dns';
+import logger from './utils/logger.js';
 
 // Fix local router DNS SRV lookup issues (querySrv ECONNREFUSED)
 try {
@@ -34,13 +35,14 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://sudeepsubedi72:AXJAf0r
 
 // Connect to MongoDB
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('MongoDB connected successfully'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+  .then(() => logger.info('MongoDB connected successfully'))
+  .catch((err) => logger.error('MongoDB connection error', err));
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(CorsMiddleware);
+app.use(logger.requestMiddleware);
 
 // Resolve __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -68,7 +70,7 @@ app.use('/pdf', express.static(path.join(__dirname, '..', 'pdf')));
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
 });
 
 

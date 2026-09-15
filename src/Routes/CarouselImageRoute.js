@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
 import cloudinary from '../utils/cloudinary.js';
+import logger from '../utils/logger.js';
 
 const router = Router();
 const upload = multer({ storage: createCloudinaryStorage('sahas_carousel') });
@@ -27,12 +28,13 @@ router.post('/carousel', upload.array('images'), (req, res) => {
 
     console.log('Uploaded Images:', uploadedImages);
 
+    logger.info(`Carousel: ${uploadedImages.length} image(s) uploaded`);
     return res.status(200).json({
       message: 'Images uploaded successfully',
       images: uploadedImages,
     });
   } catch (err) {
-    console.error('Upload error:', err);
+    logger.error('Carousel upload error', err);
     res.status(500).json({ message: 'Upload failed on server', error: err.message || String(err) });
   }
 });
@@ -54,9 +56,10 @@ router.get('/carousel', async (req, res) => {
       public_id: item.public_id,
     }));
 
+    logger.info(`Carousel: ${images.length} image(s) fetched`);
     res.status(200).json(images);
   } catch (err) {
-    console.error('Fetch error:', err);
+    logger.error('Carousel fetch error', err);
     res.status(500).json({ message: 'Failed to fetch images', error: err.message || String(err) });
   }
 });
@@ -74,9 +77,10 @@ router.delete('/carousel/:publicId', async (req, res) => {
       return res.status(404).json({ message: 'Image not found or already deleted' });
     }
 
+    logger.info(`Carousel image deleted: ${publicId}`);
     res.status(200).json({ message: 'Image deleted successfully' });
   } catch (error) {
-    console.error('Delete error:', error);
+    logger.error('Carousel delete error', error);
     res.status(500).json({ message: 'Failed to delete image', error: error.message || String(error) });
   }
 });

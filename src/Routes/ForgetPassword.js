@@ -4,6 +4,7 @@ import 'dotenv/config';
 import nodemailer from 'nodemailer';
 import Credintal from '../Model/Credintals.js';
 import { encrypt } from '../AesUtil.js';
+import logger from '../utils/logger.js';
 
 const router = Router();
 
@@ -69,13 +70,14 @@ router.post('/send', async (req, res) => {
     const transporter = getTransporter();
     transporter.sendMail(mailOptions, (error) => {
       if (error) {
-        console.error('OTP Send Error:', error);
+        logger.error('OTP send email error', error);
         return res.status(500).json({ message: 'Failed to send OTP email. Please verify mail credentials.' });
       }
+      logger.info(`OTP sent to email: ${email}`);
       res.status(200).json({ message: 'OTP sent successfully to your email' });
     });
   } catch (err) {
-    console.error('OTP Store Error:', err);
+    logger.error('OTP store error', err);
     res.status(500).json({ message: 'Internal server error', error: err.message || String(err) });
   }
 });
@@ -110,9 +112,10 @@ router.post('/verify', async (req, res) => {
       return res.status(400).json({ message: 'Invalid OTP code. Please check and try again.' });
     }
 
+    logger.info(`OTP verified for email: ${email}`);
     res.status(200).json({ message: 'OTP verified successfully' });
   } catch (err) {
-    console.error('OTP Verify Error:', err);
+    logger.error('OTP verify error', err);
     res.status(500).json({ message: 'Internal server error', error: err.message || String(err) });
   }
 });
@@ -161,9 +164,10 @@ const handlePasswordReset = async (req, res) => {
     user.otp_expiry = undefined;
     await user.save();
 
+    logger.info(`Password reset successful for email: ${email}`);
     res.status(200).json({ message: 'Password has been reset successfully! You can now log in.' });
   } catch (err) {
-    console.error('Password Reset Error:', err);
+    logger.error('Password reset error', err);
     res.status(500).json({ message: 'Internal server error', error: err.message || String(err) });
   }
 };
@@ -199,7 +203,7 @@ router.post('/password/generate', async (req, res) => {
     const transporter = getTransporter();
     transporter.sendMail(mailOptions, async (error) => {
       if (error) {
-        console.error('Password Send Error:', error);
+        logger.error('Password generate email error', error);
         return res.status(500).json({ message: 'Failed to send password email', error: error.message || String(error) });
       }
 
@@ -209,16 +213,16 @@ router.post('/password/generate', async (req, res) => {
           { password: encryptedPassword },
           { new: true, upsert: true }
         );
-
+        logger.info(`Generated password sent and saved for: ${email}`);
         res.json({ message: 'Password sent and updated successfully' });
       } catch (dbErr) {
-        console.error('DB Update Error:', dbErr);
+        logger.error('DB update error after password generate email', dbErr);
         res.status(500).json({ message: 'Email sent, but DB update failed', error: dbErr.message || String(dbErr) });
       }
     });
 
   } catch (err) {
-    console.error('Password Generate Error:', err);
+    logger.error('Password generate error', err);
     res.status(500).json({ message: 'Internal server error', error: err.message || String(err) });
   }
 });
@@ -261,9 +265,10 @@ router.post('/password/change', async (req, res) => {
     user.password = encrypt(newPassword);
     await user.save();
 
+    logger.info(`Password changed for email: ${email}`);
     res.status(200).json({ message: 'Password changed successfully' });
   } catch (err) {
-    console.error('Password Change Error:', err);
+    logger.error('Password change error', err);
     res.status(500).json({ message: 'Internal server error', error: err.message || String(err) });
   }
 });
