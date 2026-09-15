@@ -22,6 +22,7 @@ const __dirname = path.dirname(__filename);
 // Falls back to process.cwd() in case __dirname resolves unexpectedly on the server
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 const LOG_DIR = path.join(PROJECT_ROOT, 'logs');
+const FALLBACK_LOG_FILE = path.join(LOG_DIR, 'app.log');
 
 // Create logs directory if it does not exist
 try {
@@ -92,9 +93,11 @@ function write(level, message, extra) {
   const fullLine = line + '\n';
 
   // Append to today's log file (async — will not crash the server on failure)
-  fs.appendFile(todayLogFile(), fullLine, (err) => {
-    if (err) process.stderr.write(`[LOGGER] Cannot write to log file: ${err.message}\n`);
+  const appendLog = (filePath) => fs.appendFile(filePath, fullLine, (err) => {
+    if (err) process.stderr.write(`[LOGGER] Cannot write to log file ${filePath}: ${err.message}\n`);
   });
+  appendLog(todayLogFile());
+  appendLog(FALLBACK_LOG_FILE);
 
   // Mirror to terminal as well
   if (level === 'ERROR') {

@@ -1,20 +1,17 @@
 import mongoose from 'mongoose';
+import logger from '../utils/logger.js';
 
-const MONGO_URI = process.env.MONGO_URI;
 const DBConnect = (req, res, next) => {
   if (mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) {
     return next();
   }
 
-  mongoose.connect(MONGO_URI)
-    .then(() => {
-      console.log('Database connected successfully');
-      next();
-    })
-    .catch((err) => {
-      console.error('Error while connecting to database:', err);
-      next();
-    });
+  const requestId = req.requestId || 'unknown';
+  logger.error('Database unavailable for request', { requestId, path: req.originalUrl, readyState: mongoose.connection.readyState });
+  return res.status(503).json({
+    message: 'Database service temporarily unavailable',
+    requestId,
+  });
 };
 
 export default DBConnect;

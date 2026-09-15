@@ -32,8 +32,9 @@ router.get("/getBasicDetails", async (request,response)=>{
     response.status(200).json(data);
   }
   catch(error){
-    logger.error('Error retrieving BasicDetails', error);
-    response.status(500).json({ error: "Server error", details: error.message || String(error) });
+    const requestId = request.requestId || 'unknown';
+    logger.error('Error retrieving BasicDetails', { requestId, error });
+    response.status(500).json({ message: "Failed to fetch basic details", requestId });
   }
 })
 

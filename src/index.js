@@ -1,5 +1,6 @@
 import express from 'express';
 import dns from 'dns';
+import crypto from 'crypto';
 import logger from './utils/logger.js';
 
 // Fix local router DNS SRV lookup issues (querySrv ECONNREFUSED)
@@ -34,6 +35,11 @@ app.disable('x-powered-by');
 app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  req.requestId = req.headers['x-request-id'] || crypto.randomUUID();
+  res.setHeader('X-Request-Id', req.requestId);
+  next();
+});
 app.use(CorsMiddleware);
 app.use(logger.requestMiddleware);
 
@@ -74,7 +80,7 @@ app.use((req, res) => {
 });
 
 app.use((error, req, res, next) => {
-  logger.error('Unhandled request error', error);
+  logger.error('Unhandled request error', { requestId: req.requestId, error });
   if (res.headersSent) return next(error);
 
   const statusCode = Number.isInteger(error.statusCode) && error.statusCode >= 400
@@ -83,7 +89,7 @@ app.use((error, req, res, next) => {
   const message = statusCode >= 500 && process.env.NODE_ENV === 'production'
     ? 'Internal server error'
     : error.message || 'Request failed';
-  res.status(statusCode).json({ message });
+  res.status(statusCode).json({ message, requestId: req.requestId });
 });
 
 const startServer = async () => {
