@@ -17,13 +17,21 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// logs/ directory lives at sahas-backend/logs/
-const LOG_DIR = path.join(__dirname, '..', '..', 'logs');
+// Resolve logs/ relative to the project root (sahas-backend/logs/)
+// __dirname = sahas-backend/src/utils → go up 2 levels
+// Falls back to process.cwd() in case __dirname resolves unexpectedly on the server
+const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
+const LOG_DIR = path.join(PROJECT_ROOT, 'logs');
 
 // Create logs directory if it does not exist
-if (!fs.existsSync(LOG_DIR)) {
-  fs.mkdirSync(LOG_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(LOG_DIR)) {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+  }
+} catch (e) {
+  process.stderr.write(`[LOGGER] Failed to create log directory at ${LOG_DIR}: ${e.message}\n`);
 }
+
 
 /**
  * Returns today's date string in YYYY-MM-DD format (local time).

@@ -71,6 +71,7 @@ app.use('/pdf', express.static(path.join(__dirname, '..', 'pdf')));
 // Start server
 app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
+  logger.info(`Log directory: ${process.cwd()}/logs  (writing YYYY-MM-DD.log)`);
 });
 
 
