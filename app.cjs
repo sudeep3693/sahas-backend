@@ -1,10 +1,10 @@
-// CommonJS wrapper for LiteSpeed / Phusion Passenger in cPanel
-// Allows require() from lsnode.js while dynamically importing ES module src/index.js
+// cPanel/LiteSpeed fallback launcher. Configuration is loaded by src/start.js.
 
-import('./src/index.js')
+import('./src/start.js')
   .then(() => {
-    console.log('ES Module backend loaded successfully via app.cjs');
+    console.log('Backend loaded successfully via app.cjs');
   })
   .catch((err) => {
-    console.error('Failed to load ES Module backend in app.cjs:', err);
+    console.error('Failed to load backend in app.cjs:', err);
+    process.exitCode = 1;
   });
