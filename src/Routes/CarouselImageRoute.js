@@ -33,7 +33,7 @@ router.post('/carousel', upload.array('images'), (req, res) => {
     });
   } catch (err) {
     console.error('Upload error:', err);
-    res.status(500).json({ message: 'Upload failed on server' });
+    res.status(500).json({ message: 'Upload failed on server', error: err.message || String(err) });
   }
 });
 
@@ -57,7 +57,7 @@ router.get('/carousel', async (req, res) => {
     res.status(200).json(images);
   } catch (err) {
     console.error('Fetch error:', err);
-    res.status(500).json({ message: 'Failed to fetch images' });
+    res.status(500).json({ message: 'Failed to fetch images', error: err.message || String(err) });
   }
 });
 
@@ -77,7 +77,7 @@ router.delete('/carousel/:publicId', async (req, res) => {
     res.status(200).json({ message: 'Image deleted successfully' });
   } catch (error) {
     console.error('Delete error:', error);
-    res.status(500).json({ message: 'Failed to delete image' });
+    res.status(500).json({ message: 'Failed to delete image', error: error.message || String(error) });
   }
 });
 

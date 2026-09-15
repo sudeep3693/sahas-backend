@@ -45,9 +45,11 @@ router.get('/all', async (req, res) => {
     const messages = await Message.find();
     res.status(200).json(messages);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch messages', error });
+    console.error('Fetch messages error:', error);
+    res.status(500).json({ message: 'Failed to fetch messages', error: error.message || error });
   }
 });
+
 
 /**
  * Delete message by ID (also delete Cloudinary image)

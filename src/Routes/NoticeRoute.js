@@ -33,7 +33,7 @@ router.post('/', upload.array('images'), (req, res) => {
     });
   } catch (err) {
     console.error('Notice Upload Error:', err);
-    res.status(500).json({ message: 'Notice upload failed on server' });
+    res.status(500).json({ message: 'Notice upload failed on server', error: err.message || String(err) });
   }
 });
 
@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
     res.status(200).json(images);
   } catch (err) {
     console.error('Notice Fetch Error:', err);
-    res.status(500).json({ message: 'Failed to fetch notice images' });
+    res.status(500).json({ message: 'Failed to fetch notice images', error: err.message || String(err) });
   }
 });
 
@@ -77,7 +77,7 @@ router.delete('/:publicId', async (req, res) => {
     res.status(200).json({ message: 'Notice image deleted successfully' });
   } catch (error) {
     console.error('Notice Delete Error:', error);
-    res.status(500).json({ message: 'Failed to delete notice image' });
+    res.status(500).json({ message: 'Failed to delete notice image', error: error.message || String(error) });
   }
 });
 

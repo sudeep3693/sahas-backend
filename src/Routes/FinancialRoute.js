@@ -28,7 +28,7 @@ router.post('/add', async (request, response) => {
 
   } catch (err) {
     console.error("Error saving institutional details:", err);
-    response.status(500).json({ error: "Failed to save data" });
+    response.status(500).json({ error: "Failed to save data", details: err.message || String(err) });
   }
 });
 
@@ -43,7 +43,7 @@ router.get('/getAll', async (request,response)=>{
   catch (err){
 
     console.log("error while retriving data");
-    response.status(500).json({error: "error while retriving data"});
+    response.status(500).json({error: "error while retriving data", details: err.message || String(err)});
 
   }
 });

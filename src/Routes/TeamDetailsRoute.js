@@ -26,7 +26,7 @@ router.post('/save/:type', upload.none(), async (req, res) => {
     res.status(201).json({ message: 'Successfully saved team data', teamDetail });
   } catch (error) {
     console.error('Error saving team detail:', error);
-    res.status(500).json({ message: 'Server error while saving team detail', error });
+    res.status(500).json({ message: 'Server error while saving team detail', error: error.message || String(error) });
   }
 });
 
@@ -39,7 +39,7 @@ router.get('/all', async (req, res) => {
     const teamDetails = await TeamDetail.find();
     res.status(200).json(teamDetails);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch team details', error });
+    res.status(500).json({ message: 'Failed to fetch team details', error: error.message || String(error) });
   }
 });
 
@@ -52,7 +52,7 @@ router.get('/category/:category', async (req, res) => {
     const teamDetails = await TeamDetail.find({ category: req.params.category }).sort({ positionOrder: 1, createdAt: 1 });
     res.status(200).json(teamDetails);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching team details by category', error });
+    res.status(500).json({ message: 'Error fetching team details by category', error: error.message || String(error) });
   }
 });
 
@@ -66,7 +66,7 @@ router.get('/categories', async (req, res) => {
     res.status(200).json(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
-    res.status(500).json({ message: 'Failed to fetch categories', error });
+    res.status(500).json({ message: 'Failed to fetch categories', error: error.message || String(error) });
   }
 });
 
@@ -80,7 +80,7 @@ router.get('/name/:name', async (req, res) => {
     if (!teamDetail) return res.status(404).json({ message: 'Team member not found' });
     res.status(200).json(teamDetail);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching team detail by name', error });
+    res.status(500).json({ message: 'Error fetching team detail by name', error: error.message || String(error) });
   }
 });
 
@@ -94,7 +94,7 @@ router.delete('/delete/:id', async (req, res) => {
     res.status(200).json({ message: 'Deleted successfully' });
   } catch (error) {
     console.error('Error deleting team detail:', error);
-    res.status(500).json({ message: 'Failed to delete' });
+    res.status(500).json({ message: 'Failed to delete', error: error.message || String(error) });
   }
 });
 

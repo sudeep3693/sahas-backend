@@ -40,7 +40,7 @@ router.post('/save', upload.single('image'), async (req, res) => {
     });
   } catch (error) {
     console.error('Error saving news detail:', error);
-    res.status(500).json({ message: 'Server error while saving news detail', error });
+    res.status(500).json({ message: 'Server error while saving news detail', error: error.message || String(error) });
   }
 });
 
@@ -62,7 +62,7 @@ router.get('/all', async (req, res) => {
 
     res.status(200).json(formattedNews);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch news details', error });
+    res.status(500).json({ message: 'Failed to fetch news details', error: error.message || String(error) });
   }
 });
 
@@ -82,7 +82,7 @@ router.delete('/delete/:id', async (req, res) => {
     res.status(200).json({ message: 'Deleted successfully' });
   } catch (error) {
     console.error('Error deleting news detail:', error);
-    res.status(500).json({ message: 'Failed to delete' });
+    res.status(500).json({ message: 'Failed to delete', error: error.message || String(error) });
   }
 });
 

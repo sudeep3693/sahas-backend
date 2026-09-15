@@ -20,7 +20,7 @@ router.post("/basicDetails", async (request, response) => {
     });
   } catch (error) {
     console.error("Error saving/updating DB:", error);
-    response.status(500).json({ error: "Server error" });
+    response.status(500).json({ error: "Server error", details: error.message || String(error) });
   }
 });
 
@@ -31,9 +31,8 @@ router.get("/getBasicDetails", async (request,response)=>{
     response.status(200).json(data);
   }
   catch(error){
-console.error("Error retriving record: ", error);
-    response.status(500).json({ error: "Server error" });
-
+    console.error("Error retriving record: ", error);
+    response.status(500).json({ error: "Server error", details: error.message || String(error) });
   }
 })
 

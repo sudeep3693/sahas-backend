@@ -18,7 +18,7 @@ router.post('/login', async (request, response) => {
     }
   } catch (err) {
     console.error("Error while retrieving the data:", err);
-    response.status(500).send("Internal Server Error");
+    response.status(500).json({ message: "Internal Server Error", error: err.message || String(err) });
   }
 });
 

@@ -60,7 +60,7 @@ router.post('/save', upload.single('file'), async (req, res) => {
     res.status(201).json({ message: 'Document saved successfully', document });
   } catch (error) {
     console.error('Error saving document:', error);
-    res.status(500).json({ message: 'Failed to save document', error });
+    res.status(500).json({ message: 'Failed to save document', error: error.message || String(error) });
   }
 });
 
@@ -70,7 +70,7 @@ router.get('/all', async (req, res) => {
     const documents = await Document.find().sort({ uploadedAt: -1 });
     res.status(200).json(documents);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch documents', error });
+    res.status(500).json({ message: 'Failed to fetch documents', error: error.message || String(error) });
   }
 });
 
@@ -80,7 +80,7 @@ router.get('/category/:category', async (req, res) => {
     const docs = await Document.find({ category: req.params.category }).sort({ uploadedAt: -1 });
     res.status(200).json(docs);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching documents by category', error });
+    res.status(500).json({ message: 'Error fetching documents by category', error: error.message || String(error) });
   }
 });
 
@@ -102,7 +102,7 @@ router.delete('/delete/:id', async (req, res) => {
     res.status(200).json({ message: 'Document deleted successfully' });
   } catch (error) {
     console.error('Error deleting document:', error);
-    res.status(500).json({ message: 'Failed to delete document', error });
+    res.status(500).json({ message: 'Failed to delete document', error: error.message || String(error) });
   }
 });
 

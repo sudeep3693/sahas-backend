@@ -76,7 +76,7 @@ router.post('/send', async (req, res) => {
     });
   } catch (err) {
     console.error('OTP Store Error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error', error: err.message || String(err) });
   }
 });
 
@@ -113,7 +113,7 @@ router.post('/verify', async (req, res) => {
     res.status(200).json({ message: 'OTP verified successfully' });
   } catch (err) {
     console.error('OTP Verify Error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error', error: err.message || String(err) });
   }
 });
 
@@ -164,7 +164,7 @@ const handlePasswordReset = async (req, res) => {
     res.status(200).json({ message: 'Password has been reset successfully! You can now log in.' });
   } catch (err) {
     console.error('Password Reset Error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error', error: err.message || String(err) });
   }
 };
 
@@ -200,7 +200,7 @@ router.post('/password/generate', async (req, res) => {
     transporter.sendMail(mailOptions, async (error) => {
       if (error) {
         console.error('Password Send Error:', error);
-        return res.status(500).json({ message: 'Failed to send password email' });
+        return res.status(500).json({ message: 'Failed to send password email', error: error.message || String(error) });
       }
 
       try {
@@ -213,13 +213,13 @@ router.post('/password/generate', async (req, res) => {
         res.json({ message: 'Password sent and updated successfully' });
       } catch (dbErr) {
         console.error('DB Update Error:', dbErr);
-        res.status(500).json({ message: 'Email sent, but DB update failed' });
+        res.status(500).json({ message: 'Email sent, but DB update failed', error: dbErr.message || String(dbErr) });
       }
     });
 
   } catch (err) {
     console.error('Password Generate Error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error', error: err.message || String(err) });
   }
 });
 
@@ -264,7 +264,7 @@ router.post('/password/change', async (req, res) => {
     res.status(200).json({ message: 'Password changed successfully' });
   } catch (err) {
     console.error('Password Change Error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error', error: err.message || String(err) });
   }
 });
 

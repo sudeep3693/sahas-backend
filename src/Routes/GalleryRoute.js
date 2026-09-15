@@ -33,7 +33,7 @@ router.post('/', upload.array('images'), (req, res) => {
     });
   } catch (err) {
     console.error('Gallery Upload Error:', err);
-    res.status(500).json({ message: 'Gallery upload failed on server' });
+    res.status(500).json({ message: 'Gallery upload failed on server', error: err.message || String(err) });
   }
 });
 
@@ -56,7 +56,7 @@ router.get('/', async (req, res) => {
     res.status(200).json(images);
   } catch (err) {
     console.error('Gallery Fetch Error:', err);
-    res.status(500).json({ message: 'Failed to fetch gallery images' });
+    res.status(500).json({ message: 'Failed to fetch gallery images', error: err.message || String(err) });
   }
 });
 
@@ -76,7 +76,7 @@ router.delete('/:publicId', async (req, res) => {
     res.status(200).json({ message: 'Gallery image deleted successfully' });
   } catch (error) {
     console.error('Gallery Delete Error:', error);
-    res.status(500).json({ message: 'Failed to delete gallery image' });
+    res.status(500).json({ message: 'Failed to delete gallery image', error: error.message || String(error) });
   }
 });
 
