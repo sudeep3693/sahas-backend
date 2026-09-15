@@ -1,1 +1,6 @@
-static.env
+node_modules/
+.env
+Static.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
