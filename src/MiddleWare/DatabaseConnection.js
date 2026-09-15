@@ -1,16 +1,20 @@
 import mongoose from 'mongoose';
+
+const MONGO_URI = process.env.MONGO_URI;
 const DBConnect = (req, res, next) => {
+  if (mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) {
+    return next();
+  }
 
-  mongoose.connect('mongodb+srv://sudeepsubedi72:wdf4A8ypJKVMxunU@sahascooperative.eyybn0u.mongodb.net/SahasCooperative?retryWrites=true&w=majority&appName=SahasCooperative', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-    .then(() => console.log('Database connected successfully'))
-    .catch((err) => console.error('Error while connecting to database:', err));
+  mongoose.connect(MONGO_URI)
+    .then(() => {
+      console.log('Database connected successfully');
+      next();
+    })
+    .catch((err) => {
+      console.error('Error while connecting to database:', err);
+      next();
+    });
+};
 
-  next();
-}
-// 'mongodb://localhost:27017/Sahas'
-//process.env.MONGO_URI
 export default DBConnect;
-
