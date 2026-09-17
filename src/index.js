@@ -2,6 +2,7 @@ import express from 'express';
 import dns from 'dns';
 import crypto from 'crypto';
 import logger from './utils/logger.js';
+import CorsMiddleware from './MiddleWare/CorsMiddleware.js';
 
 // Fix local router DNS SRV lookup issues (querySrv ECONNREFUSED)
 try {
@@ -32,6 +33,7 @@ const MONGO_URI = process.env.MONGO_URI;
 // Middleware
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
+app.use(CorsMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
