@@ -14,12 +14,22 @@ const normalizeOrigin = (origin) => {
   }
 };
 
-const CorsMiddleware = (req, res, next) => {
-  const requestOrigin = req.headers.origin;
-  const configuredOrigins = (process.env.FRONTEND_ORIGINS || '')
-    .split(',')
+const parseConfiguredOrigins = (value) => {
+  if (!value) return [];
+
+  return value
+    .split(/(?:\s*[,;\r\n]\s*|\s*:\s*(?=https?:\/\/))/)
     .map((origin) => normalizeOrigin(origin))
     .filter(Boolean);
+};
+
+const CorsMiddleware = (req, res, next) => {
+  const requestOrigin = req.headers.origin;
+  const configuredOrigins = parseConfiguredOrigins(process.env.FRONTEND_ORIGINS || '');
+
+  const staticProductionOrigins = process.env.NODE_ENV === 'production'
+    ? ['https://sahas.coop.np']
+    : [];
 
   const developmentOrigins = process.env.NODE_ENV === 'production'
     ? []
@@ -27,6 +37,7 @@ const CorsMiddleware = (req, res, next) => {
 
   const allowedOrigins = new Set([
     ...configuredOrigins,
+    ...staticProductionOrigins.map((origin) => normalizeOrigin(origin)),
     ...developmentOrigins.map((origin) => normalizeOrigin(origin)),
   ]);
 
