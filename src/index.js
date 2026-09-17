@@ -12,7 +12,6 @@ try {
 
 import mongoose from 'mongoose';
 import LoginRoute from './Routes/LoginRoute.js';
-import CorsMiddleware from './MiddleWare/CorsMiddleware.js';
 import CarouselImageRoute from './Routes/CarouselImageRoute.js';
 import FinancialRoute from './Routes/FinancialRoute.js';
 import NoticeRoute from './Routes/NoticeRoute.js';
@@ -40,7 +39,6 @@ app.use((req, res, next) => {
   res.setHeader('X-Request-Id', req.requestId);
   next();
 });
-app.use(CorsMiddleware);
 app.use(logger.requestMiddleware);
 
 // Resolve __dirname for ES modules
