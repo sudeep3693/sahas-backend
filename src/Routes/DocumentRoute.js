@@ -4,35 +4,11 @@ import fs from 'fs';
 import path from 'path';
 import Document from '../Model/DocumentModel.js';
 import logger from '../utils/logger.js';
+import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
 
 const router = Router();
-
-// Ensure pdf directory exists
-const pdfDir = path.join(process.cwd(), 'pdf');
-if (!fs.existsSync(pdfDir)) {
-  fs.mkdirSync(pdfDir);
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const category = req.body.category; // "reports" or "downloads"
-    const categoryDir = path.join(pdfDir, category);
-
-    // Create category folder if missing
-    if (!fs.existsSync(categoryDir)) {
-      fs.mkdirSync(categoryDir, { recursive: true });
-    }
-
-    cb(null, categoryDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${file.originalname}`;
-    cb(null, uniqueName);
-  },
-});
-
 const upload = multer({
-  storage,
+  storage: createCloudinaryStorage('sahas_documents'),
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/pdf') {
       cb(null, true);
@@ -49,11 +25,11 @@ router.post('/save', upload.single('file'), async (req, res) => {
 
     if (!req.file) return res.status(400).json({ message: 'PDF file is required' });
 
+    const fileUrl = req.file.path || req.file.secure_url;
     const document = new Document({
       heading,
       category,
-      // Save file path including category (for frontend)
-      filePath: `/pdf/${category}/${req.file.filename}`,
+      filePath: fileUrl,
     });
 
     await document.save();
@@ -95,10 +71,20 @@ router.delete('/delete/:id', async (req, res) => {
     const doc = await Document.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Document not found' });
 
-    if (doc.filePath) {
-      const filePath = path.join(process.cwd(), doc.filePath.replace(/^\//, '')); // remove leading slash
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+    if (doc.filePath && doc.filePath.includes('cloudinary.com')) {
+      const publicId = decodeURIComponent(doc.filePath.split('/upload/').pop() || '').replace(/\?.*$/, '');
+      if (publicId) {
+        const cloudinaryPublicId = publicId.includes('/')
+          ? publicId.replace(/^.*?\/sahas_documents\//, 'sahas_documents/')
+          : `sahas_documents/${publicId}`;
+
+        const { default: cloudinary } = await import('../utils/cloudinary.js');
+        await cloudinary.uploader.destroy(cloudinaryPublicId);
+      }
+    } else if (doc.filePath && doc.filePath.startsWith('/pdf/')) {
+      const localFilePath = path.join(process.cwd(), doc.filePath.replace(/^\//, ''));
+      if (fs.existsSync(localFilePath)) {
+        fs.unlinkSync(localFilePath);
       }
     }
 
