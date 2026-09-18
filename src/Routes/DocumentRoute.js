@@ -5,10 +5,11 @@ import path from 'path';
 import Document from '../Model/DocumentModel.js';
 import logger from '../utils/logger.js';
 import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
+import { normalizeCloudinaryDocumentUrl } from '../utils/documentUrl.js';
 
 const router = Router();
 const upload = multer({
-  storage: createCloudinaryStorage('sahas_documents'),
+  storage: createCloudinaryStorage('sahas_documents', 'raw'),
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/pdf') {
       cb(null, true);
@@ -25,7 +26,7 @@ router.post('/save', upload.single('file'), async (req, res) => {
 
     if (!req.file) return res.status(400).json({ message: 'PDF file is required' });
 
-    const fileUrl = req.file.path || req.file.secure_url;
+    const fileUrl = normalizeCloudinaryDocumentUrl(req.file.path || req.file.secure_url);
     const document = new Document({
       heading,
       category,
@@ -45,8 +46,12 @@ router.post('/save', upload.single('file'), async (req, res) => {
 router.get('/all', async (req, res) => {
   try {
     const documents = await Document.find().sort({ uploadedAt: -1 });
+    const normalizedDocuments = documents.map((doc) => ({
+      ...doc.toObject(),
+      filePath: normalizeCloudinaryDocumentUrl(doc.filePath),
+    }));
     logger.info(`Documents fetched: ${documents.length} record(s)`);
-    res.status(200).json(documents);
+    res.status(200).json(normalizedDocuments);
   } catch (error) {
     logger.error('Error fetching documents', error);
     res.status(500).json({ message: 'Failed to fetch documents', error: error.message || String(error) });
@@ -57,8 +62,12 @@ router.get('/all', async (req, res) => {
 router.get('/category/:category', async (req, res) => {
   try {
     const docs = await Document.find({ category: req.params.category }).sort({ uploadedAt: -1 });
+    const normalizedDocs = docs.map((doc) => ({
+      ...doc.toObject(),
+      filePath: normalizeCloudinaryDocumentUrl(doc.filePath),
+    }));
     logger.info(`Documents fetched for category "${req.params.category}": ${docs.length} record(s)`);
-    res.status(200).json(docs);
+    res.status(200).json(normalizedDocs);
   } catch (error) {
     logger.error('Error fetching documents by category', error);
     res.status(500).json({ message: 'Error fetching documents by category', error: error.message || String(error) });

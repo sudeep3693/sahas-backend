@@ -10,7 +10,10 @@ test('resolves local backend pdf paths', () => {
   );
 });
 
-test('keeps direct Cloudinary URLs unchanged', () => {
+test('converts Cloudinary image URLs into raw PDF URLs', () => {
   const cloudinaryUrl = 'https://res.cloudinary.com/demo/image/upload/v123/report.pdf';
-  assert.equal(resolveDocumentUrl('https://sahas-backend.onrender.com', cloudinaryUrl), cloudinaryUrl);
+  assert.equal(
+    resolveDocumentUrl('https://sahas-backend.onrender.com', cloudinaryUrl),
+    'https://res.cloudinary.com/demo/raw/upload/v123/report.pdf'
+  );
 });
