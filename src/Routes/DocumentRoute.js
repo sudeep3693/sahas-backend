@@ -31,15 +31,17 @@ router.post('/save', upload.single('file'), async (req, res) => {
 
     if (!req.file) return res.status(400).json({ message: 'PDF file is required' });
 
+    const originalFileName = req.file.originalname || req.body.fileName || 'document.pdf';
     const fileUrl = normalizeCloudinaryDocumentUrl(req.file.path || req.file.secure_url);
     const document = new Document({
       heading,
       category,
       filePath: fileUrl,
+      fileName: originalFileName,
     });
 
     await document.save();
-    logger.info(`Document saved: "${heading}" [${category}] → ${document.filePath}`);
+    logger.info(`Document saved: "${heading}" [${category}] → ${document.filePath} (${document.fileName})`);
     res.status(201).json({ message: 'Document saved successfully', document });
   } catch (error) {
     logger.error('Error saving document', error);

@@ -4,6 +4,7 @@ const documentSchema = new mongoose.Schema({
   heading: { type: String, required: true },
   category: { type: String, enum: ["reports", "downloads"], required: true },
   filePath: { type: String, required: true },
+  fileName: { type: String, required: true },
   uploadedAt: { type: Date, default: Date.now }
 });
 

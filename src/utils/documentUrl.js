@@ -1,3 +1,13 @@
+export function buildPdfFilename(name = 'document') {
+  const rawName = String(name || 'document').trim();
+  const withoutExtension = rawName.replace(/\.[pP][dD][fF]$/, '');
+  const cleanName = withoutExtension
+    .replace(/[^a-zA-Z0-9-_]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return `${cleanName || 'document'}.pdf`;
+}
+
 export function isCloudinaryUrl(url) {
   return typeof url === 'string' && /^https?:\/\//i.test(url) && url.includes('cloudinary.com');
 }
