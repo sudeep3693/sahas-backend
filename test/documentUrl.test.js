@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { resolveDocumentUrl, buildPdfFilename } from '../src/utils/documentUrl.js';
+import { sanitizePdfPublicId } from '../src/utils/Cloudniarystorage.js';
 
 test('resolves local backend pdf paths', () => {
   assert.equal(
@@ -23,3 +24,10 @@ test('preserves uploaded PDF filename while sanitizing unsafe characters', () =>
   assert.equal(buildPdfFilename('Quarterly Report.pdf'), 'Quarterly_Report.pdf');
   assert.equal(buildPdfFilename('  Annual Report .pdf  '), 'Annual_Report.pdf');
 });
+
+test('sanitizes PDF public ID properly', () => {
+  assert.equal(sanitizePdfPublicId('Financial Report 2024.pdf'), 'financial_report_2024');
+  assert.equal(sanitizePdfPublicId('Document#1!?.pdf'), 'document_1');
+  assert.equal(sanitizePdfPublicId(''), 'document');
+});
+

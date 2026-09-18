@@ -5,23 +5,88 @@ import path from 'path';
 import Document from '../Model/DocumentModel.js';
 import logger from '../utils/logger.js';
 import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
-import { normalizeCloudinaryDocumentUrl } from '../utils/documentUrl.js';
+import { normalizeCloudinaryDocumentUrl, buildPdfFilename } from '../utils/documentUrl.js';
 
 const router = Router();
 const upload = multer({
   storage: createCloudinaryStorage('sahas_documents', 'raw'),
   fileFilter: (req, file, cb) => {
-    const isPdf = file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf');
-    if (isPdf) {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const isPdfMime = file.mimetype === 'application/pdf';
+    const isPdfExt = ext === '.pdf';
+
+    if (isPdfMime || isPdfExt) {
       cb(null, true);
     } else {
-      cb(new Error('Only PDF files are allowed'), false);
+      cb(new Error('Only PDF files (.pdf) are allowed'), false);
     }
+  },
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB maximum
   },
 });
 
+// Helper to fetch file bytes from Cloudinary or local storage
+async function fetchDocumentBuffer(filePath) {
+  if (!filePath || typeof filePath !== 'string') {
+    throw new Error('Document file path is missing or invalid');
+  }
+
+  if (/^https?:\/\//i.test(filePath)) {
+    let response = await fetch(filePath);
+
+    // If Cloudinary URL gave 404, try swapping raw/upload and image/upload
+    if (!response.ok && filePath.includes('cloudinary.com')) {
+      let altUrl = null;
+      if (filePath.includes('/raw/upload/')) {
+        altUrl = filePath.replace('/raw/upload/', '/image/upload/');
+      } else if (filePath.includes('/image/upload/')) {
+        altUrl = filePath.replace('/image/upload/', '/raw/upload/');
+      }
+
+      if (altUrl) {
+        const altResponse = await fetch(altUrl);
+        if (altResponse.ok) {
+          response = altResponse;
+        }
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file from remote storage (HTTP ${response.status})`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+
+  // Local filesystem lookup
+  const cleanPath = filePath.replace(/^\/+/, '');
+  const candidatePaths = [
+    path.join(process.cwd(), cleanPath),
+    path.join(process.cwd(), 'pdf', path.basename(cleanPath)),
+    path.join(process.cwd(), '..', cleanPath),
+  ];
+
+  for (const candidate of candidatePaths) {
+    if (fs.existsSync(candidate)) {
+      return fs.readFileSync(candidate);
+    }
+  }
+
+  throw new Error(`Local file not found for path: ${filePath}`);
+}
+
 // Upload document
-router.post('/save', upload.single('file'), async (req, res) => {
+router.post('/save', (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      logger.error('Document upload validation error', err);
+      return res.status(400).json({ message: err.message || 'File upload error' });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     const { heading, category } = req.body;
 
@@ -29,9 +94,11 @@ router.post('/save', upload.single('file'), async (req, res) => {
       return res.status(400).json({ message: 'Category must be reports or downloads' });
     }
 
-    if (!req.file) return res.status(400).json({ message: 'PDF file is required' });
+    if (!req.file) {
+      return res.status(400).json({ message: 'PDF file is required' });
+    }
 
-    const originalFileName = req.file.originalname || req.body.fileName || 'document.pdf';
+    const originalFileName = buildPdfFilename(req.file.originalname || req.body.fileName || heading || 'document.pdf');
     const fileUrl = normalizeCloudinaryDocumentUrl(req.file.path || req.file.secure_url);
     const document = new Document({
       heading,
@@ -81,6 +148,46 @@ router.get('/category/:category', async (req, res) => {
   }
 });
 
+// Stream document for viewing in browser (disposition: inline)
+router.get('/view/:id', async (req, res) => {
+  try {
+    const doc = await Document.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: 'Document not found' });
+
+    const safeFilename = buildPdfFilename(doc.fileName || doc.heading || 'document');
+    const fileBuffer = await fetchDocumentBuffer(doc.filePath);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${safeFilename}"; filename*=UTF-8''${encodeURIComponent(safeFilename)}`);
+    res.setHeader('Content-Length', fileBuffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.end(fileBuffer);
+  } catch (error) {
+    logger.error('Error serving document for viewing', error);
+    res.status(500).json({ message: 'Failed to display PDF document', error: error.message || String(error) });
+  }
+});
+
+// Stream document for downloading (disposition: attachment)
+router.get('/download/:id', async (req, res) => {
+  try {
+    const doc = await Document.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: 'Document not found' });
+
+    const safeFilename = buildPdfFilename(doc.fileName || doc.heading || 'document');
+    const fileBuffer = await fetchDocumentBuffer(doc.filePath);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"; filename*=UTF-8''${encodeURIComponent(safeFilename)}`);
+    res.setHeader('Content-Length', fileBuffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.end(fileBuffer);
+  } catch (error) {
+    logger.error('Error downloading document', error);
+    res.status(500).json({ message: 'Failed to download PDF document', error: error.message || String(error) });
+  }
+});
+
 // Delete document
 router.delete('/delete/:id', async (req, res) => {
   try {
@@ -95,7 +202,18 @@ router.delete('/delete/:id', async (req, res) => {
           : `sahas_documents/${publicId}`;
 
         const { default: cloudinary } = await import('../utils/cloudinary.js');
-        await cloudinary.uploader.destroy(cloudinaryPublicId);
+        // Delete raw asset
+        try {
+          await cloudinary.uploader.destroy(cloudinaryPublicId, { resource_type: 'raw' });
+        } catch (e) {
+          logger.warn('Cloudinary raw destroy warning', e);
+        }
+        // Also attempt image delete in case legacy file was stored under image resource_type
+        try {
+          await cloudinary.uploader.destroy(cloudinaryPublicId.replace(/\.pdf$/i, ''), { resource_type: 'image' });
+        } catch (e) {
+          logger.warn('Cloudinary image destroy warning', e);
+        }
       }
     } else if (doc.filePath && doc.filePath.startsWith('/pdf/')) {
       const localFilePath = path.join(process.cwd(), doc.filePath.replace(/^\//, ''));
@@ -114,3 +232,4 @@ router.delete('/delete/:id', async (req, res) => {
 });
 
 export default router;
+
