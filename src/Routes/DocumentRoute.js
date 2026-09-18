@@ -11,7 +11,8 @@ const router = Router();
 const upload = multer({
   storage: createCloudinaryStorage('sahas_documents', 'raw'),
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') {
+    const isPdf = file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf');
+    if (isPdf) {
       cb(null, true);
     } else {
       cb(new Error('Only PDF files are allowed'), false);
@@ -23,6 +24,10 @@ const upload = multer({
 router.post('/save', upload.single('file'), async (req, res) => {
   try {
     const { heading, category } = req.body;
+
+    if (!['reports', 'downloads'].includes(category)) {
+      return res.status(400).json({ message: 'Category must be reports or downloads' });
+    }
 
     if (!req.file) return res.status(400).json({ message: 'PDF file is required' });
 
