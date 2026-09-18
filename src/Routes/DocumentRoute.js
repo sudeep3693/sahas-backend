@@ -5,7 +5,8 @@ import path from 'path';
 import Document from '../Model/DocumentModel.js';
 import logger from '../utils/logger.js';
 import { createCloudinaryStorage } from '../utils/Cloudniarystorage.js';
-import { normalizeCloudinaryDocumentUrl, buildPdfFilename } from '../utils/documentUrl.js';
+import { normalizeCloudinaryDocumentUrl, buildPdfFilename, extractCloudinaryPublicId } from '../utils/documentUrl.js';
+import cloudinary from '../utils/cloudinary.js';
 
 const router = Router();
 const upload = multer({
@@ -34,26 +35,66 @@ async function fetchDocumentBuffer(filePath) {
 
   if (/^https?:\/\//i.test(filePath)) {
     let response = await fetch(filePath);
+    let cldError = response.headers?.get?.('x-cld-error') || null;
 
-    // If Cloudinary URL gave 404, try swapping raw/upload and image/upload
+    // If Cloudinary URL failed, try swapping resource types and signed URLs
     if (!response.ok && filePath.includes('cloudinary.com')) {
-      let altUrl = null;
+      const candidateUrls = [];
+
+      // 1. Try swapping raw/upload and image/upload
       if (filePath.includes('/raw/upload/')) {
-        altUrl = filePath.replace('/raw/upload/', '/image/upload/');
+        candidateUrls.push(filePath.replace('/raw/upload/', '/image/upload/'));
       } else if (filePath.includes('/image/upload/')) {
-        altUrl = filePath.replace('/image/upload/', '/raw/upload/');
+        candidateUrls.push(filePath.replace('/image/upload/', '/raw/upload/'));
       }
 
-      if (altUrl) {
-        const altResponse = await fetch(altUrl);
-        if (altResponse.ok) {
-          response = altResponse;
+      // 2. Try signed URLs via Cloudinary SDK
+      const publicId = extractCloudinaryPublicId(filePath);
+      if (publicId) {
+        try {
+          const rawSigned = cloudinary.utils.url(publicId, {
+            resource_type: 'raw',
+            sign_url: true,
+            secure: true,
+          });
+          candidateUrls.push(rawSigned);
+
+          const imagePublicId = publicId.replace(/\.pdf$/i, '');
+          const imageSigned = cloudinary.utils.url(imagePublicId, {
+            resource_type: 'image',
+            format: 'pdf',
+            sign_url: true,
+            secure: true,
+          });
+          candidateUrls.push(imageSigned);
+        } catch (e) {
+          logger.warn('Failed to generate signed URL fallback for Cloudinary', e);
+        }
+      }
+
+      // Try each candidate URL until one succeeds
+      for (const altUrl of candidateUrls) {
+        try {
+          const altResponse = await fetch(altUrl);
+          if (altResponse.ok) {
+            response = altResponse;
+            break;
+          }
+          if (altResponse.headers?.get?.('x-cld-error')) {
+            cldError = altResponse.headers.get('x-cld-error');
+          }
+        } catch (err) {
+          logger.warn(`Failed fetching alt URL: ${altUrl}`, err);
         }
       }
     }
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch file from remote storage (HTTP ${response.status})`);
+      const extraInfo = cldError ? ` (${cldError})` : '';
+      const actionHint = response.status === 401 && filePath.includes('cloudinary.com')
+        ? ' - Cloudinary blocked PDF delivery. Please enable "Allow delivery of PDF and ZIP files" in Cloudinary Console (Settings > Security).'
+        : '';
+      throw new Error(`Failed to fetch file from remote storage (HTTP ${response.status}${extraInfo})${actionHint}`);
     }
 
     const arrayBuffer = await response.arrayBuffer();
