@@ -5,6 +5,27 @@ import logger from '../utils/logger.js';
 
 const router = Router();
 
+const TEAM_CATEGORY_ORDER = [
+  'board-of-directors',
+  'account-committee',
+  'risk-management-committee',
+  'loan-committee',
+  'education-committee',
+  'advisory-committee',
+  'employees',
+];
+
+const normalizeCategory = (category = '') => {
+  if (!category) return '';
+  const value = String(category).trim();
+  return value === 'account-comittee' ? 'account-committee' : value;
+};
+
+const getCategoryOrderIndex = (category) => {
+  const index = TEAM_CATEGORY_ORDER.indexOf(normalizeCategory(category));
+  return index === -1 ? TEAM_CATEGORY_ORDER.length : index;
+};
+
 // Use memory storage — no image required, just in case one is passed
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -69,8 +90,18 @@ router.get('/category/:category', async (req, res) => {
 router.get('/categories', async (req, res) => {
   try {
     const categories = await TeamDetail.distinct('category');
-    logger.info(`Categories fetched: ${categories.length}`);
-    res.status(200).json(categories);
+    const normalizedCategories = [...new Set(categories.map(normalizeCategory).filter(Boolean))];
+
+    const orderedCategories = normalizedCategories.sort((a, b) => {
+      const orderA = getCategoryOrderIndex(a);
+      const orderB = getCategoryOrderIndex(b);
+
+      if (orderA !== orderB) return orderA - orderB;
+      return a.localeCompare(b);
+    });
+
+    logger.info(`Categories fetched: ${orderedCategories.length}`);
+    res.status(200).json(orderedCategories);
   } catch (error) {
     logger.error('Error fetching categories', error);
     res.status(500).json({ message: 'Failed to fetch categories', error: error.message || String(error) });
